@@ -7,7 +7,10 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+mod fractals;
+use crate::fractals::JuliaImage;
 fn main() {
+    // JuliaImage::example().compute();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
