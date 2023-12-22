@@ -1,4 +1,5 @@
 import { Complex } from "../api";
+import { Point, Size } from "./config";
 
 const cache = {
   aspectRatio: -1,
@@ -29,9 +30,6 @@ export const getViewerDimentions = (aspectRatio: number): Size => {
   let height = floor(PIXELS_IN_IMAGE / width);
   return { width, height };
 };
-
-type Point = { x: number; y: number };
-type Size = { width: number; height: number };
 
 /**
  * Expects points (x, y) where x, y are expressed as a ratio of

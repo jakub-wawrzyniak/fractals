@@ -1,9 +1,9 @@
 import "./index.css";
 import { render } from "solid-js/web";
-import { Map } from "./fractal";
+import { Fractal } from "./fractal";
 
 const App = () => {
-  return <Map />;
+  return <Fractal />;
 };
 
 render(() => <App />, document.getElementById("root") as HTMLElement);

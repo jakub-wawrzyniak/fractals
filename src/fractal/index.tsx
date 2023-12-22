@@ -1,9 +1,10 @@
 import { Show, createEffect } from "solid-js";
-import { VIEWER_ROOT_ID, mountFractal } from "./fractalViewer.js";
-import { useAspectRatio } from "./useAspectRatio.js";
+import { mountFractal } from "./viewer.js";
+import { useAspectRatio } from "./hooks.js";
+import { VIEWER_ROOT_ID } from "./config.js";
 
 type AnyFn = () => void;
-export const Map = () => {
+export const Fractal = () => {
   const ratio = useAspectRatio(VIEWER_ROOT_ID);
   const nothingToClean = () => undefined;
 
