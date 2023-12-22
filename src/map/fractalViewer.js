@@ -1,4 +1,5 @@
 import OpenSeadragon from "openseadragon";
+import { getViewerDimentions, pointToComplex } from "./utils";
 
 export const VIEWER_ROOT_ID = "fractal";
 
@@ -8,25 +9,25 @@ export const VIEWER_ROOT_ID = "fractal";
  * @returns
  */
 export const mountFractal = (aspectRatio) => {
+  const { height, width } = getViewerDimentions(aspectRatio);
   let viewer = OpenSeadragon({
     id: VIEWER_ROOT_ID,
     prefixUrl: "",
     wrapHorizontal: false,
     // debugMode: true,
-    visibilityRatio: 0.1,
+    visibilityRatio: 1,
+    // minZoomImageRatio
+    minZoomLevel: 1,
 
     showFullPageControl: false,
     showZoomControl: false,
     showHomeControl: false,
     showNavigator: false,
-    constrainDuringPan: true,
     tileSources: {
       //please, do not use Infinity, OSD internally builds a cached tile hierarchy
-      height: 1024 * 1024 * 1024,
-      width: 1024 * 1024 * 1024,
+      height,
+      width,
       tileSize: 256,
-      minLevel: 9,
-      //fractal parameter
       maxIterations: 100,
       getTileUrl: function (level, x, y) {
         //note that we still have to implement getTileUrl
@@ -62,33 +63,52 @@ export const mountFractal = (aspectRatio) => {
         }
         return 1.0;
       },
-      downloadTileStart: function (context) {
-        let size = this.getTileBounds(
+      getRequestedTileSize(context) {
+        const bounds = this.getTileBounds(
           context.postData.level,
           context.postData.dx,
           context.postData.dy,
           true
         );
+        return {
+          width: Math.floor(bounds.width),
+          height: Math.floor(bounds.height),
+        };
+      },
+      getTileBoundsInComplex(context) {
         let bounds = this.getTileBounds(
           context.postData.level,
           context.postData.dx,
           context.postData.dy,
           false
         );
+        return {
+          topLeft: pointToComplex(bounds.getTopLeft()),
+          bottomRight: pointToComplex(bounds.getBottomRight()),
+        };
+      },
+      downloadTileStart: function (context) {
+        const tileSize = this.getRequestedTileSize(context);
+        const tileBounds = this.getTileBoundsInComplex(context);
+
+        let bounds = this.getTileBounds(
+          context.postData.level,
+          context.postData.dx,
+          context.postData.dy,
+          false
+        );
+
         let canvas = document.createElement("canvas");
         let ctx = canvas.getContext("2d");
 
-        size.width = Math.floor(size.width);
-        size.height = Math.floor(size.height);
-
-        if (size.width < 1 || size.height < 1) {
+        if (tileSize.width < 1 || tileSize.height < 1) {
           canvas.width = 1;
           canvas.height = 1;
           context.finish(ctx);
           return;
         } else {
-          canvas.width = size.width;
-          canvas.height = size.height;
+          canvas.width = tileSize.width;
+          canvas.height = tileSize.height;
         }
 
         //don't really think about the rescaling, just played with
@@ -97,15 +117,14 @@ export const mountFractal = (aspectRatio) => {
         bounds.width = bounds.width * 2.5;
         bounds.y = bounds.y * 2.5 - 1.2;
         bounds.height = bounds.height * 2.5;
-
-        var imagedata = ctx.createImageData(size.width, size.height);
-        for (let x = 0; x < size.width; x++) {
-          for (let y = 0; y < size.height; y++) {
-            let index = (y * size.width + x) * 4;
+        var imagedata = ctx.createImageData(tileSize.width, tileSize.height);
+        for (let x = 0; x < tileSize.width; x++) {
+          for (let y = 0; y < tileSize.height; y++) {
+            let index = (y * tileSize.width + x) * 4;
             imagedata.data[index] = Math.floor(
               this.iterateMandelbrot({
-                a: bounds.x + bounds.width * ((x + 1) / size.width),
-                b: bounds.y + bounds.height * ((y + 1) / size.height),
+                a: bounds.x + bounds.width * ((x + 1) / tileSize.width),
+                b: bounds.y + bounds.height * ((y + 1) / tileSize.height),
               }) * 255
             );
 

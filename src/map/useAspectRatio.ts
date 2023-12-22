@@ -38,7 +38,7 @@ export const useAspectRatio = (elementId: string) => {
 
   const observer = new ResizeObserver((entries) => {
     const { height, width } = entries[0].contentRect;
-    const aspectRatio = height / width;
+    const aspectRatio = width / height;
     update(aspectRatio);
   });
 
