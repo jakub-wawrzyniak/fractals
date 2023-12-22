@@ -1,5 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { getViewerDimentions, pointToComplex } from "./utils";
+import { calcImage } from "../api";
 
 export const VIEWER_ROOT_ID = "fractal";
 
@@ -27,7 +28,7 @@ export const mountFractal = (aspectRatio) => {
       //please, do not use Infinity, OSD internally builds a cached tile hierarchy
       height,
       width,
-      tileSize: 256,
+      tileSize: 512,
       maxIterations: 100,
       getTileUrl: function (level, x, y) {
         //note that we still have to implement getTileUrl
@@ -83,13 +84,17 @@ export const mountFractal = (aspectRatio) => {
           false
         );
         return {
-          topLeft: pointToComplex(bounds.getTopLeft()),
-          bottomRight: pointToComplex(bounds.getBottomRight()),
+          top_left: pointToComplex(bounds.getTopLeft()),
+          bottom_right: pointToComplex(bounds.getBottomRight()),
         };
       },
       downloadTileStart: function (context) {
         const tileSize = this.getRequestedTileSize(context);
         const tileBounds = this.getTileBoundsInComplex(context);
+
+        calcImage({ resolution: tileSize.width, ...tileBounds }).then(
+          console.log
+        );
 
         let bounds = this.getTileBounds(
           context.postData.level,

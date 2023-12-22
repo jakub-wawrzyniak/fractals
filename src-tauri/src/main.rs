@@ -8,11 +8,20 @@ fn greet(name: &str) -> String {
 }
 
 mod fractals;
-use crate::fractals::JuliaImage;
+use fractals::JuliaImageRequest;
+
+#[tauri::command]
+async fn calc_image(request: JuliaImageRequest) -> String {
+    format!(
+        "res={}, re={}, im={}",
+        request.resolution, request.top_left.re, request.bottom_right.im
+    )
+}
+
 fn main() {
-    // JuliaImage::example().compute();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![calc_image])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

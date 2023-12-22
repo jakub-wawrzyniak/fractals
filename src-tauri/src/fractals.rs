@@ -2,16 +2,14 @@ use image;
 use num::Complex;
 use std::vec;
 
-type Point = Complex<f64>;
-
 struct JuliaSet {
     escape_radius: f64,
-    constant: Point,
+    constant: Complex<f64>,
 }
 
 impl JuliaSet {
     const MAX_ITERATION: u32 = 1000;
-    fn new(constant: Point) -> Self {
+    fn new(constant: Complex<f64>) -> Self {
         let discriminant: f64 = 1.0 - 4.0 * constant.norm();
         let escape_radius = 4.0 + discriminant.max(0.0).sqrt();
         Self {
@@ -20,18 +18,18 @@ impl JuliaSet {
         }
     }
 
-    fn next_value(&self, this_value: Point) -> Point {
+    fn next_value(&self, this_value: Complex<f64>) -> Complex<f64> {
         this_value.powi(2) + self.constant
     }
 
-    fn normalize_divergence(last_point: Point, iterations: u32) -> u8 {
-        let Point { im, re } = last_point;
+    fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
+        let Complex { im, re } = last_point;
         let abs = (im.powi(2) + re.powi(2)).log10().log10();
         let value = (iterations as f64) + 1.0 - abs / 2.0_f64.log10();
         (value * 20.0).floor().max(0.0) as u8
     }
 
-    fn how_quickly_diverges(&self, start: Point) -> u8 {
+    fn how_quickly_diverges(&self, start: Complex<f64>) -> u8 {
         let mut iteration = 0;
         let mut current = start;
         while iteration < JuliaSet::MAX_ITERATION && current.norm() < self.escape_radius {
@@ -53,15 +51,15 @@ pub struct JuliaImage {
 
 impl JuliaImage {
     pub fn new(
-        domain_top_left_boundary: Point,
-        domain_bottom_right_boundary: Point,
+        domain_top_left_boundary: Complex<f64>,
+        domain_bottom_right_boundary: Complex<f64>,
         resolution: u32,
     ) -> Self {
-        let Point {
+        let Complex {
             re: real_min,
             im: imag_max,
         } = domain_top_left_boundary;
-        let Point {
+        let Complex {
             re: real_max,
             im: imag_min,
         } = domain_bottom_right_boundary;
@@ -116,4 +114,18 @@ impl JuliaImage {
         )
         .unwrap();
     }
+}
+
+use serde::Deserialize;
+#[derive(Deserialize)]
+pub struct Point {
+    pub im: f64,
+    pub re: f64,
+}
+
+#[derive(Deserialize)]
+pub struct JuliaImageRequest {
+    pub top_left: Point,
+    pub bottom_right: Point,
+    pub resolution: f64,
 }
