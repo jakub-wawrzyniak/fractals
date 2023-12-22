@@ -7,15 +7,18 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-mod fractals;
-use fractals::JuliaImageRequest;
+pub mod fractals;
+use fractals::{JuliaImage, JuliaImageRequest};
 
 #[tauri::command]
-async fn calc_image(request: JuliaImageRequest) -> String {
-    format!(
-        "res={}, re={}, im={}",
-        request.resolution, request.top_left.re, request.bottom_right.im
-    )
+fn calc_image(request: JuliaImageRequest) -> Vec<u8> {
+    let out = JuliaImage::from(request).compute().take_pixels();
+    println!(
+        "re={}, im={}",
+        request.bottom_right.real, request.bottom_right.imaginary
+    );
+    println!("{}", out.len());
+    out
 }
 
 fn main() {

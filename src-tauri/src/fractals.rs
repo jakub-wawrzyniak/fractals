@@ -1,6 +1,26 @@
 use image;
 use num::Complex;
+use serde::Deserialize;
 use std::vec;
+
+#[derive(Deserialize, Clone, Copy)]
+pub struct Point {
+    pub imaginary: f64,
+    pub real: f64,
+}
+
+impl Into<Complex<f64>> for Point {
+    fn into(self) -> Complex<f64> {
+        Complex::new(self.real, self.imaginary)
+    }
+}
+
+#[derive(Deserialize, Clone, Copy)]
+pub struct JuliaImageRequest {
+    pub top_left: Point,
+    pub bottom_right: Point,
+    pub resolution: f64,
+}
 
 struct JuliaSet {
     escape_radius: f64,
@@ -10,8 +30,8 @@ struct JuliaSet {
 impl JuliaSet {
     const MAX_ITERATION: u32 = 1000;
     fn new(constant: Complex<f64>) -> Self {
-        let discriminant: f64 = 1.0 - 4.0 * constant.norm();
-        let escape_radius = 4.0 + discriminant.max(0.0).sqrt();
+        // let discriminant: f64 = 1.0 - 4.0 * constant.norm();
+        let escape_radius = 10.0;
         Self {
             escape_radius,
             constant,
@@ -81,6 +101,7 @@ impl JuliaImage {
         Self::new(Complex::new(-1.0, 1.5), Complex::new(1.0, -1.5), 100)
     }
 
+    #[inline]
     fn set_pixel(&mut self, x: usize, y: usize, value: u8) {
         let id = self.width_px * y + x;
         self.pixels[id] = value;
@@ -104,28 +125,67 @@ impl JuliaImage {
         self
     }
 
-    pub fn save(&self) {
-        image::save_buffer(
-            "out.png",
+    pub fn save_as(&self, name: String) {
+        let result = image::save_buffer(
+            format!("./{name}"),
             &self.pixels,
             self.width_px as u32,
             self.height_px as u32,
             image::ColorType::L8,
-        )
-        .unwrap();
+        );
+        match result {
+            Err(e) => eprintln!("{}", e.to_string()),
+            Ok(_) => (),
+        };
+    }
+
+    pub fn save(&self) {
+        self.save_as("out.png".into());
+    }
+
+    pub fn take_pixels(self) -> Vec<u8> {
+        self.pixels
     }
 }
 
-use serde::Deserialize;
-#[derive(Deserialize)]
-pub struct Point {
-    pub im: f64,
-    pub re: f64,
+impl From<JuliaImageRequest> for JuliaImage {
+    fn from(request: JuliaImageRequest) -> Self {
+        Self::new(
+            request.top_left.into(),
+            request.bottom_right.into(),
+            request.resolution as u32,
+        )
+    }
 }
 
-#[derive(Deserialize)]
-pub struct JuliaImageRequest {
-    pub top_left: Point,
-    pub bottom_right: Point,
-    pub resolution: f64,
+#[cfg(test)]
+mod tests {
+    use super::JuliaImage;
+    use divan;
+
+    #[divan::bench]
+    fn default_tauri_square() -> JuliaImage {
+        let top = num::Complex::new(-5.0, 5.0);
+        let bottom = num::Complex::new(5.0, -5.0);
+        JuliaImage::new(top, bottom, 1024).compute()
+    }
+
+    #[divan::bench]
+    fn image_vec_serialization(bencher: divan::Bencher) {
+        let image = default_tauri_square().take_pixels();
+        bencher.bench(|| {
+            serde_json::to_string(&image).unwrap();
+        })
+    }
+
+    #[test]
+    fn example_saves() {
+        JuliaImage::example()
+            .compute()
+            .save_as("example.png".into());
+    }
+    #[test]
+    fn default_tauri_saves() {
+        default_tauri_square().save_as("default.png".into());
+    }
 }

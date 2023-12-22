@@ -23,3 +23,19 @@ image = "0.24.7"
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+
+[[bench]]
+name = "fractals"
+path = "src/bench.rs"
+harness = false
+
+[dev-dependencies]
+divan = "0.1.8"
+
+# Enable a small amount of optimization in debug mode
+# [profile.dev]
+# opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+# [profile.dev.package."*"]
+# opt-level = 3
