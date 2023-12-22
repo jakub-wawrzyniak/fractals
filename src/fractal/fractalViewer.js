@@ -15,10 +15,11 @@ export const mountFractal = (aspectRatio) => {
     id: VIEWER_ROOT_ID,
     prefixUrl: "",
     wrapHorizontal: false,
-    // debugMode: true,
-    visibilityRatio: 1,
+    debugMode: true,
+    // visibilityRatio: 1,
     // minZoomImageRatio
-    minZoomLevel: 1,
+    // minZoomLevel: 1,
+    timeout: 10_000,
 
     showFullPageControl: false,
     showZoomControl: false,
@@ -29,7 +30,7 @@ export const mountFractal = (aspectRatio) => {
       height,
       width,
       tileSize: 512,
-      maxIterations: 100,
+      // maxIterations: 100,
       getTileUrl: function (level, x, y) {
         //note that we still have to implement getTileUrl
         //since we do, we use this to construct meaningful tile cache key
@@ -71,9 +72,10 @@ export const mountFractal = (aspectRatio) => {
           context.postData.dy,
           true
         );
+        const { floor, max } = Math;
         return {
-          width: Math.floor(bounds.width),
-          height: Math.floor(bounds.height),
+          width: max(floor(bounds.width), 1),
+          height: max(floor(bounds.height), 1),
         };
       },
       getTileBoundsInComplex(context) {
@@ -88,57 +90,54 @@ export const mountFractal = (aspectRatio) => {
           bottom_right: pointToComplex(bounds.getBottomRight()),
         };
       },
-      downloadTileStart: function (context) {
+      downloadTileStart: async function (context) {
         const tileSize = this.getRequestedTileSize(context);
         const tileBounds = this.getTileBoundsInComplex(context);
 
-        calcImage({ resolution: tileSize.width, ...tileBounds }).then(
-          console.log
-        );
-
-        let bounds = this.getTileBounds(
-          context.postData.level,
-          context.postData.dx,
-          context.postData.dy,
-          false
-        );
-
-        let canvas = document.createElement("canvas");
-        let ctx = canvas.getContext("2d");
-
-        if (tileSize.width < 1 || tileSize.height < 1) {
-          canvas.width = 1;
-          canvas.height = 1;
-          context.finish(ctx);
-          return;
-        } else {
-          canvas.width = tileSize.width;
-          canvas.height = tileSize.height;
-        }
+        // if (tileSize.width < 1 || tileSize.height < 1) {
+        //   canvas.width = 1;
+        //   canvas.height = 1;
+        //   context.finish(ctx);
+        //   return;
+        // } else {
+        //   canvas.width = tileSize.width;
+        //   canvas.height = tileSize.height;
+        // }
 
         //don't really think about the rescaling, just played with
         // linear transforms until it was centered
-        bounds.x = bounds.x * 2.5 - 1.5;
-        bounds.width = bounds.width * 2.5;
-        bounds.y = bounds.y * 2.5 - 1.2;
-        bounds.height = bounds.height * 2.5;
-        var imagedata = ctx.createImageData(tileSize.width, tileSize.height);
-        for (let x = 0; x < tileSize.width; x++) {
-          for (let y = 0; y < tileSize.height; y++) {
-            let index = (y * tileSize.width + x) * 4;
-            imagedata.data[index] = Math.floor(
-              this.iterateMandelbrot({
-                a: bounds.x + bounds.width * ((x + 1) / tileSize.width),
-                b: bounds.y + bounds.height * ((y + 1) / tileSize.height),
-              }) * 255
-            );
+        // bounds.x = bounds.x * 2.5 - 1.5;
+        // bounds.width = bounds.width * 2.5;
+        // bounds.y = bounds.y * 2.5 - 1.2;
+        // bounds.height = bounds.height * 2.5;
+        // var imagedata = ctx.createImageData(tileSize.width, tileSize.height);
+        // for (let x = 0; x < tileSize.width; x++) {
+        //   for (let y = 0; y < tileSize.height; y++) {
+        //     let index = (y * tileSize.width + x) * 4;
+        //     imagedata.data[index] = Math.floor(
+        //       this.iterateMandelbrot({
+        //         a: bounds.x + bounds.width * ((x + 1) / tileSize.width),
+        //         b: bounds.y + bounds.height * ((y + 1) / tileSize.height),
+        //       }) * 255
+        //     );
 
-            imagedata.data[index + 3] = 255;
-          }
-        }
-        ctx.putImageData(imagedata, 0, 0);
+        //     imagedata.data[index + 3] = 255;
+        //   }
+        // }
+
+        const image = await calcImage({
+          width_px: tileSize.width,
+          ...tileBounds,
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = tileSize.width;
+        canvas.height = tileSize.height;
+        const ctx = canvas.getContext("2d");
+        ctx.putImageData(image, 0, 0);
         // note: we output context2D!
+        document.getElementById("debug").replaceChildren(canvas);
         context.finish(ctx);
+        console.log("tile");
       },
       downloadTileAbort: function (context) {
         //we could set a flag which would stop the execution,

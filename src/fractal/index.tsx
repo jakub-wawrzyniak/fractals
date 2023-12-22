@@ -25,6 +25,10 @@ export const Map = () => {
           <span class="loading loading-spinner loading-lg" />
         </div>
       </Show>
+      <div
+        id="debug"
+        class="w-full h-full hidden absolute top-0 left-0 z-30 bg-blue-600"
+      ></div>
     </div>
   );
 };

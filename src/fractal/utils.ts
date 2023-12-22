@@ -1,3 +1,5 @@
+import { Complex } from "../api";
+
 const cache = {
   aspectRatio: -1,
   xToReal: 0,
@@ -29,7 +31,6 @@ export const getViewerDimentions = (aspectRatio: number): Size => {
 };
 
 type Point = { x: number; y: number };
-type Complex = { re: number; im: number };
 type Size = { width: number; height: number };
 
 /**
@@ -38,10 +39,51 @@ type Size = { width: number; height: number };
  */
 export const pointToComplex = (point: Point): Complex => {
   const scale = { ...point };
-  scale.x += 0.5;
-  scale.y += 0.5 * cache.aspectRatio;
+  scale.x -= 0.5;
+  scale.y -= 0.5 * cache.aspectRatio;
+  scale.y *= -1;
   return {
-    re: scale.x * cache.xToReal,
-    im: scale.y * cache.yToImaginary,
+    real: scale.x * cache.xToReal,
+    imaginary: scale.y * cache.yToImaginary,
   };
 };
+
+if (import.meta.vitest) {
+  const { it, expect } = import.meta.vitest;
+  it("translates (0,0)", () => {
+    initCache(1);
+    const arg: Point = { x: 0, y: 0 };
+    const should: Complex = {
+      real: -2.5,
+      imaginary: 2.5,
+    };
+    const got = pointToComplex(arg);
+    expect(got).toEqual(should);
+  });
+
+  it("translates (0.25,0.25)", () => {
+    initCache(1);
+    const precition = 4;
+    const arg: Point = { x: 0.25, y: 0.25 };
+    const should: Complex = {
+      real: -1.25,
+      imaginary: 1.25,
+    };
+    const got = pointToComplex(arg);
+    expect(got.real).toBeCloseTo(should.real, precition);
+    expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
+  });
+
+  it("translates (0.5,0.5)", () => {
+    initCache(1);
+    const precition = 4;
+    const arg: Point = { x: 0.5, y: 0.5 };
+    const should: Complex = {
+      real: 0,
+      imaginary: 0,
+    };
+    const got = pointToComplex(arg);
+    expect(got.real).toBeCloseTo(should.real, precition);
+    expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
+  });
+}

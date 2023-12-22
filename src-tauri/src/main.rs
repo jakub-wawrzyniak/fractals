@@ -11,14 +11,8 @@ pub mod fractals;
 use fractals::{JuliaImage, JuliaImageRequest};
 
 #[tauri::command]
-fn calc_image(request: JuliaImageRequest) -> Vec<u8> {
-    let out = JuliaImage::from(request).compute().take_pixels();
-    println!(
-        "re={}, im={}",
-        request.bottom_right.real, request.bottom_right.imaginary
-    );
-    println!("{}", out.len());
-    out
+async fn calc_image(request: JuliaImageRequest) -> Vec<u8> {
+    JuliaImage::from(request).compute().take_pixels()
 }
 
 fn main() {

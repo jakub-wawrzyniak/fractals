@@ -19,7 +19,7 @@ impl Into<Complex<f64>> for Point {
 pub struct JuliaImageRequest {
     pub top_left: Point,
     pub bottom_right: Point,
-    pub resolution: f64,
+    pub width_px: f64,
 }
 
 struct JuliaSet {
@@ -28,7 +28,7 @@ struct JuliaSet {
 }
 
 impl JuliaSet {
-    const MAX_ITERATION: u32 = 1000;
+    const MAX_ITERATION: u32 = 100;
     fn new(constant: Complex<f64>) -> Self {
         // let discriminant: f64 = 1.0 - 4.0 * constant.norm();
         let escape_radius = 10.0;
@@ -146,6 +146,15 @@ impl JuliaImage {
     pub fn take_pixels(self) -> Vec<u8> {
         self.pixels
     }
+
+    pub fn take_ui_pixels(self) -> Vec<u8> {
+        self.pixels
+            .chunks(self.width_px)
+            .rev()
+            .flatten()
+            .map(|el| el.clone())
+            .collect()
+    }
 }
 
 impl From<JuliaImageRequest> for JuliaImage {
@@ -153,7 +162,7 @@ impl From<JuliaImageRequest> for JuliaImage {
         Self::new(
             request.top_left.into(),
             request.bottom_right.into(),
-            request.resolution as u32,
+            request.width_px as u32,
         )
     }
 }
