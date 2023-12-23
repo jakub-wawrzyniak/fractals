@@ -49,5 +49,8 @@ export type OpenSeadragonTileSourceProto = OpenSeadragon.TileSourceOptions & {
   getTileCacheData(cache: TileCache): TileCache;
   // getTileCacheDataAsImage(cache: TileCache): HTMLImageElement;
   getTileCacheDataAsContext2D(cache: TileCache): CanvasRenderingContext2D;
-  unsafeGetTileBounds: TileSource["getTileBounds"];
+  unsafeGetTileBounds(
+    context: DownloadContext,
+    isSource: boolean
+  ): OpenSeadragon.Rect;
 };

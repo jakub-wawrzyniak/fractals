@@ -11,21 +11,22 @@ const initCache = (aspectRatio: number) => {
   const MAX_SCALE = 5;
   cache.aspectRatio = aspectRatio;
   if (aspectRatio >= 1) {
-    cache.yToImaginary = MAX_SCALE;
-    cache.xToReal = MAX_SCALE / aspectRatio;
-  } else {
     cache.xToReal = MAX_SCALE;
-    cache.yToImaginary = aspectRatio / MAX_SCALE;
+    cache.yToImaginary = MAX_SCALE / aspectRatio;
+  } else {
+    cache.yToImaginary = MAX_SCALE;
+    cache.xToReal = aspectRatio * MAX_SCALE;
   }
 };
 
 export const getViewerDimentions = (aspectRatio: number): Size => {
+  initCache(aspectRatio);
+  const PIXELS_IN_IMAGE = 2 ** 60;
+
   // w * h = pixels and w / h = ratio
   // (w * h)(w / h) = pixels * ratio
   // w = sqrt(pixels * ratio)
-  initCache(aspectRatio);
   const { sqrt, floor } = Math;
-  const PIXELS_IN_IMAGE = 2 ** 60;
   let width = floor(sqrt(PIXELS_IN_IMAGE * aspectRatio));
   let height = floor(PIXELS_IN_IMAGE / width);
   return { width, height };
@@ -38,7 +39,7 @@ export const getViewerDimentions = (aspectRatio: number): Size => {
 export const pointToComplex = (point: Point): Complex => {
   const scale = { ...point };
   scale.x -= 0.5;
-  scale.y -= 0.5 * cache.aspectRatio;
+  scale.y -= 0.5;
   scale.y *= -1;
   return {
     real: scale.x * cache.xToReal,
@@ -83,5 +84,14 @@ if (import.meta.vitest) {
     const got = pointToComplex(arg);
     expect(got.real).toBeCloseTo(should.real, precition);
     expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
+  });
+
+  it("maintains correct aspect ratio", () => {
+    initCache(1.5); // longer width
+    const arg: Point = { x: 0, y: 0 };
+    const got = pointToComplex(arg);
+    const xAbs = Math.abs(got.real);
+    const yAbs = Math.abs(got.imaginary);
+    expect(yAbs).toBeLessThan(xAbs);
   });
 }

@@ -173,9 +173,17 @@ mod tests {
     use divan;
 
     fn default_image() -> JuliaImage {
-        let top = num::Complex::new(-5.0, 5.0);
-        let bottom = num::Complex::new(5.0, -5.0);
+        let unit = 2.5;
+        let top = num::Complex::new(-unit, unit);
+        let bottom = num::Complex::new(unit, -unit);
         JuliaImage::new(top, bottom, 1024)
+    }
+
+    fn default_tile() -> JuliaImage {
+        let unit = 2.5;
+        let top = num::Complex::new(-unit, unit);
+        let bottom = num::Complex::new(0.0, 0.0);
+        JuliaImage::new(top, bottom, 512)
     }
 
     #[divan::bench(sample_count = 20)]
@@ -208,7 +216,11 @@ mod tests {
             .save_as("example.png".into());
     }
     #[test]
-    fn default_tauri_saves() {
+    fn default_image_saves() {
         default_image().compute().save_as("default.png".into());
+    }
+    #[test]
+    fn default_tile_saves() {
+        default_tile().compute().save_as("tile.png".into());
     }
 }

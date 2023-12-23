@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { getViewerDimentions, pointToComplex } from "./utils";
-import { calcImage } from "../api";
+import { JuliaImageRequest, calcImage } from "../api";
 import {
   OpenSeadragonTileSourceProto,
   VIEWER_OPTIONS,
@@ -13,6 +13,7 @@ const createTileSource = (aspectRatio: number): any => {
     height,
     width,
     tileSize: 512,
+    tileOverlap: 0,
     getTileUrl(level, x, y) {
       return `${level}/${x}-${y}`;
     },
@@ -25,7 +26,7 @@ const createTileSource = (aspectRatio: number): any => {
         level: level,
       };
     },
-    unsafeGetTileBounds(...args) {
+    unsafeGetTileBounds(context, isSource) {
       // I know what you are thinking: wtf is this about?
       // Tbh, I spent 2 days trying to figure out, and you
       // wouldn't believe what authors of OSD are doing with
@@ -33,15 +34,17 @@ const createTileSource = (aspectRatio: number): any => {
 
       // And yes, I took this code from their docs.
       // So yeah, supposedly this is legit.
-      return (this as unknown as TileSource).getTileBounds(...args);
+      const { dx, dy, level } = context.postData;
+      return (this as unknown as TileSource).getTileBounds(
+        level,
+        dx,
+        dy,
+        isSource
+      );
     },
     getRequestedTileSize(context) {
-      const bounds = this.unsafeGetTileBounds(
-        context.postData.level,
-        context.postData.dx,
-        context.postData.dy,
-        true // when true, bounds.x and bounds.y are always 0
-      );
+      const bounds = this.unsafeGetTileBounds(context, true);
+      // when true, bounds.x and bounds.y are always 0
       const { floor, max } = Math;
       return {
         width: max(floor(bounds.width), 1),
@@ -49,12 +52,8 @@ const createTileSource = (aspectRatio: number): any => {
       };
     },
     getTileBoundsInComplex(context) {
-      let bounds = this.unsafeGetTileBounds(
-        context.postData.level,
-        context.postData.dx,
-        context.postData.dy,
-        false // when false, bounds.width and bounds.height are always <1
-      );
+      let bounds = this.unsafeGetTileBounds(context, false);
+      // when false, bounds.width and bounds.height are always <1
       return {
         top_left: pointToComplex(bounds.getTopLeft()),
         bottom_right: pointToComplex(bounds.getBottomRight()),
@@ -64,14 +63,22 @@ const createTileSource = (aspectRatio: number): any => {
     downloadTileStart: async function (context) {
       const tileSize = this.getRequestedTileSize(context);
       const tileBounds = this.getTileBoundsInComplex(context);
-      const image = await calcImage({
+      const request: JuliaImageRequest = {
         width_px: tileSize.width,
         ...tileBounds,
-      });
+      };
+      const image = await calcImage(request);
       const canvas = document.createElement("canvas");
       canvas.width = tileSize.width;
       canvas.height = tileSize.height;
       const ctx = canvas.getContext("2d")!;
+      console.log({
+        ...request,
+        post: context.postData,
+        bounds: this.unsafeGetTileBounds(context, false),
+        topLeft: this.unsafeGetTileBounds(context, false).getTopLeft(),
+        bottomRight: this.unsafeGetTileBounds(context, false).getBottomRight(),
+      });
       ctx.putImageData(image, 0, 0);
       context.finish(ctx);
     },
