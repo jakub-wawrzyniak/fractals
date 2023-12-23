@@ -12,7 +12,7 @@ use fractals::{JuliaImage, JuliaImageRequest};
 
 #[tauri::command]
 async fn calc_image(request: JuliaImageRequest) -> Vec<u8> {
-    JuliaImage::from(request).compute().take_pixels()
+    JuliaImage::from(request).compute().take_ui_pixels()
 }
 
 fn main() {

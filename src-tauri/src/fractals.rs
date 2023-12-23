@@ -147,7 +147,7 @@ impl JuliaImage {
         self.pixels
     }
 
-    pub fn take_ui_pixels(self) -> Vec<u8> {
+    pub fn take_ui_pixels(&self) -> Vec<u8> {
         self.pixels
             .chunks(self.width_px)
             .rev()
@@ -172,16 +172,30 @@ mod tests {
     use super::JuliaImage;
     use divan;
 
-    #[divan::bench]
-    fn default_tauri_square() -> JuliaImage {
+    fn default_image() -> JuliaImage {
         let top = num::Complex::new(-5.0, 5.0);
         let bottom = num::Complex::new(5.0, -5.0);
-        JuliaImage::new(top, bottom, 1024).compute()
+        JuliaImage::new(top, bottom, 1024)
+    }
+
+    #[divan::bench(sample_count = 20)]
+    fn default_tauri_square(bencher: divan::Bencher) {
+        bencher.bench(|| {
+            default_image().compute();
+        })
+    }
+
+    #[divan::bench]
+    fn image_vec_transformation(bencher: divan::Bencher) {
+        let image = default_image().compute();
+        bencher.bench(|| {
+            image.take_ui_pixels();
+        })
     }
 
     #[divan::bench]
     fn image_vec_serialization(bencher: divan::Bencher) {
-        let image = default_tauri_square().take_pixels();
+        let image = default_image().compute().take_ui_pixels();
         bencher.bench(|| {
             serde_json::to_string(&image).unwrap();
         })
@@ -195,6 +209,6 @@ mod tests {
     }
     #[test]
     fn default_tauri_saves() {
-        default_tauri_square().save_as("default.png".into());
+        default_image().compute().save_as("default.png".into());
     }
 }

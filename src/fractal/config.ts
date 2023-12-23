@@ -32,7 +32,7 @@ type DownloadContext = {
 };
 
 type TileCache = {
-  _data: { canvas: CanvasRenderingContext2D | null };
+  _data: CanvasRenderingContext2D | null;
 };
 
 export type TileSource = OpenSeadragon.TileSource;
@@ -46,7 +46,7 @@ export type OpenSeadragonTileSourceProto = OpenSeadragon.TileSourceOptions & {
   // downloadTileAbort(context: DownloadContext): void;
   createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;
   destroyTileCache(cache: TileCache): void;
-  getTileCacheData(cache: TileCache): TileCache["_data"];
+  getTileCacheData(cache: TileCache): TileCache;
   // getTileCacheDataAsImage(cache: TileCache): HTMLImageElement;
   getTileCacheDataAsContext2D(cache: TileCache): CanvasRenderingContext2D;
   unsafeGetTileBounds: TileSource["getTileBounds"];

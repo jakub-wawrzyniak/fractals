@@ -79,22 +79,22 @@ const createTileSource = (aspectRatio: number): any => {
     createTileCache: function (cache, data) {
       //cache is the cache object meant to attach items to
       //data is context2D, just keep the reference
-      cache._data.canvas = data;
+      cache._data = data;
     },
     /** OSD internal method */
     destroyTileCache: function (cache) {
       //unset to allow GC collection
-      cache._data.canvas = null;
+      cache._data = null;
     },
     /** OSD internal method */
     getTileCacheData: function (cache) {
       //just return the raw data as it was given, part of API
-      return cache._data;
+      return cache;
     },
     /** OSD internal method */
     getTileCacheDataAsContext2D: function (cache) {
-      if (cache._data.canvas === null) throw "Cache is empty";
-      return cache._data.canvas;
+      if (cache._data === null) throw "Cache is empty";
+      return cache._data;
     },
   };
 
