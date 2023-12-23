@@ -1,32 +1,30 @@
 import OpenSeadragon from "openseadragon";
 import { JuliaImageRequest } from "../api";
 
-export const VIEWER_ROOT_ID = "fractal";
-export const VIEWER_OPTIONS: OpenSeadragon.Options = {
-  id: VIEWER_ROOT_ID,
+export const VIEWER_OPTIONS = {
+  id: "fractal",
   prefixUrl: "",
   wrapHorizontal: false,
-  debugMode: true,
-  // visibilityRatio: 1,
-  // minZoomImageRatio
-  // minZoomLevel: 1,
+  debugMode: false,
+  visibilityRatio: 1,
+  minZoomLevel: 1,
   timeout: 10_000,
-
+  imageLoaderLimit: 10,
   showFullPageControl: false,
   showZoomControl: false,
   showHomeControl: false,
   showNavigator: false,
-};
+} as const satisfies OpenSeadragon.Options;
 
 export type Point = { x: number; y: number };
 export type Size = { width: number; height: number };
-type TileRequest = {
+export type TileRequest = {
   level: number;
-  dx: number;
-  dy: number;
+  x: number;
+  y: number;
 };
 
-type DownloadContext = {
+export type DownloadContext = {
   postData: TileRequest;
   finish(ctx: CanvasRenderingContext2D): void;
 };
@@ -35,22 +33,22 @@ type TileCache = {
   _data: CanvasRenderingContext2D | null;
 };
 
-export type TileSource = OpenSeadragon.TileSource;
-export type OpenSeadragonTileSourceProto = OpenSeadragon.TileSourceOptions & {
-  getTilePostData(level: number, x: number, y: number): TileRequest;
-  getRequestedTileSize(context: DownloadContext): Size;
-  getTileBoundsInComplex(
-    context: DownloadContext
-  ): Omit<JuliaImageRequest, "width_px">;
-  downloadTileStart(context: DownloadContext): void;
-  // downloadTileAbort(context: DownloadContext): void;
-  createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;
-  destroyTileCache(cache: TileCache): void;
-  getTileCacheData(cache: TileCache): TileCache;
-  // getTileCacheDataAsImage(cache: TileCache): HTMLImageElement;
-  getTileCacheDataAsContext2D(cache: TileCache): CanvasRenderingContext2D;
-  unsafeGetTileBounds(
-    context: DownloadContext,
-    isSource: boolean
-  ): OpenSeadragon.Rect;
-};
+export type OpenSeadragonTileSourcePrototype =
+  OpenSeadragon.TileSourceOptions & {
+    getTilePostData(level: number, x: number, y: number): TileRequest;
+    getRequestedTileSize(context: DownloadContext): Size;
+    getTileBoundsInComplex(
+      context: DownloadContext
+    ): Omit<JuliaImageRequest, "width_px">;
+    downloadTileStart(context: DownloadContext): void;
+    // TODO: downloadTileAbort(context: DownloadContext): void;
+    createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;
+    destroyTileCache(cache: TileCache): void;
+    getTileCacheData(cache: TileCache): TileCache;
+    // TODO: getTileCacheDataAsImage(cache: TileCache): HTMLImageElement;
+    getTileCacheDataAsContext2D(cache: TileCache): CanvasRenderingContext2D;
+    internalGetTileBounds(
+      context: DownloadContext,
+      isSource: boolean
+    ): OpenSeadragon.Rect;
+  };

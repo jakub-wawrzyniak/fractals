@@ -1,49 +1,41 @@
 import OpenSeadragon from "openseadragon";
 import { getViewerDimentions, pointToComplex } from "./utils";
 import { JuliaImageRequest, calcImage } from "../api";
-import {
-  OpenSeadragonTileSourceProto,
-  VIEWER_OPTIONS,
-  TileSource,
-} from "./config";
+import { OpenSeadragonTileSourcePrototype, VIEWER_OPTIONS } from "./config";
 
 const createTileSource = (aspectRatio: number): any => {
   const { height, width } = getViewerDimentions(aspectRatio);
-  const tileSource: OpenSeadragonTileSourceProto = {
+  const tileSource: OpenSeadragonTileSourcePrototype = {
     height,
     width,
-    tileSize: 512,
+    tileSize: 256,
     tileOverlap: 0,
     getTileUrl(level, x, y) {
       return `${level}/${x}-${y}`;
     },
     /** OSD internal method */
-    getTilePostData(level: number, x: number, y: number) {
+    getTilePostData(level, x, y) {
       // this is later passed as DownloadContext
-      return {
-        dx: x,
-        dy: y,
-        level: level,
-      };
+      return { x, y, level };
     },
-    unsafeGetTileBounds(context, isSource) {
+    internalGetTileBounds(context, isSource) {
       // I know what you are thinking: wtf is this about?
-      // Tbh, I spent 2 days trying to figure out, and you
+      // Tbh, I spent 2 days trying to figure it out, and you
       // wouldn't believe what authors of OSD are doing with
       // this whole object internally.
 
-      // And yes, I took this code from their docs.
+      // And btw, I took this code from their docs.
       // So yeah, supposedly this is legit.
-      const { dx, dy, level } = context.postData;
+      type TileSource = OpenSeadragon.TileSource;
       return (this as unknown as TileSource).getTileBounds(
-        level,
-        dx,
-        dy,
+        context.postData.level,
+        context.postData.x,
+        context.postData.y,
         isSource
       );
     },
     getRequestedTileSize(context) {
-      const bounds = this.unsafeGetTileBounds(context, true);
+      const bounds = this.internalGetTileBounds(context, true);
       // when true, bounds.x and bounds.y are always 0
       const { floor, max } = Math;
       return {
@@ -52,8 +44,8 @@ const createTileSource = (aspectRatio: number): any => {
       };
     },
     getTileBoundsInComplex(context) {
-      let bounds = this.unsafeGetTileBounds(context, false);
-      // when false, bounds.width and bounds.height are always <1
+      const bounds = this.internalGetTileBounds(context, false);
+      // when false, all values are expressed in OSD unit "viewport"
       return {
         top_left: pointToComplex(bounds.getTopLeft()),
         bottom_right: pointToComplex(bounds.getBottomRight()),
@@ -67,18 +59,13 @@ const createTileSource = (aspectRatio: number): any => {
         width_px: tileSize.width,
         ...tileBounds,
       };
+
       const image = await calcImage(request);
       const canvas = document.createElement("canvas");
       canvas.width = tileSize.width;
       canvas.height = tileSize.height;
       const ctx = canvas.getContext("2d")!;
-      console.log({
-        ...request,
-        post: context.postData,
-        bounds: this.unsafeGetTileBounds(context, false),
-        topLeft: this.unsafeGetTileBounds(context, false).getTopLeft(),
-        bottomRight: this.unsafeGetTileBounds(context, false).getBottomRight(),
-      });
+
       ctx.putImageData(image, 0, 0);
       context.finish(ctx);
     },
@@ -109,7 +96,7 @@ const createTileSource = (aspectRatio: number): any => {
 };
 
 export const mountFractal = (aspectRatio: number) => {
-  let viewer = OpenSeadragon({
+  const viewer = OpenSeadragon({
     ...VIEWER_OPTIONS,
     tileSources: [createTileSource(aspectRatio)],
   });

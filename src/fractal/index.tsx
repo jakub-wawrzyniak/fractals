@@ -1,11 +1,11 @@
 import { Show, createEffect } from "solid-js";
 import { mountFractal } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
-import { VIEWER_ROOT_ID } from "./config.js";
+import { VIEWER_OPTIONS } from "./config.js";
 
 type AnyFn = () => void;
 export const Fractal = () => {
-  const ratio = useAspectRatio(VIEWER_ROOT_ID);
+  const ratio = useAspectRatio(VIEWER_OPTIONS.id);
   const nothingToClean = () => undefined;
 
   createEffect((clean: AnyFn) => {
@@ -17,7 +17,7 @@ export const Fractal = () => {
 
   return (
     <div>
-      <div class="min-h-screen relative h-0" id={VIEWER_ROOT_ID}>
+      <div class="min-h-screen relative h-0" id={VIEWER_OPTIONS.id}>
         {/* idk why the h-0 is needed, but without it the viewer just
       won't show up (despite having space for it) :c */}
       </div>
@@ -26,10 +26,6 @@ export const Fractal = () => {
           <span class="loading loading-spinner loading-lg" />
         </div>
       </Show>
-      <div
-        id="debug"
-        class="w-full h-full hidden absolute top-0 left-0 z-30 bg-blue-600"
-      ></div>
     </div>
   );
 };

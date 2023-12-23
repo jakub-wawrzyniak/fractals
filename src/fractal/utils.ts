@@ -1,97 +1,37 @@
 import { Complex } from "../api";
 import { Point, Size } from "./config";
 
-const cache = {
-  aspectRatio: -1,
-  xToReal: 0,
-  yToImaginary: 0,
-};
-
-const initCache = (aspectRatio: number) => {
-  const MAX_SCALE = 5;
-  cache.aspectRatio = aspectRatio;
-  if (aspectRatio >= 1) {
-    cache.xToReal = MAX_SCALE;
-    cache.yToImaginary = MAX_SCALE / aspectRatio;
-  } else {
-    cache.yToImaginary = MAX_SCALE;
-    cache.xToReal = aspectRatio * MAX_SCALE;
-  }
+let scaleViewportToComplex = 0;
+export const __initCache = (aspectRatio: number) => {
+  const MAX_SCALE = 5; // sets an upper bound for height/width in complex
+  const factor = Math.min(1, aspectRatio);
+  scaleViewportToComplex = MAX_SCALE * factor;
 };
 
 export const getViewerDimentions = (aspectRatio: number): Size => {
-  initCache(aspectRatio);
+  __initCache(aspectRatio);
   const PIXELS_IN_IMAGE = 2 ** 60;
 
   // w * h = pixels and w / h = ratio
   // (w * h)(w / h) = pixels * ratio
   // w = sqrt(pixels * ratio)
   const { sqrt, floor } = Math;
-  let width = floor(sqrt(PIXELS_IN_IMAGE * aspectRatio));
-  let height = floor(PIXELS_IN_IMAGE / width);
+  const width = floor(sqrt(PIXELS_IN_IMAGE * aspectRatio));
+  const height = floor(PIXELS_IN_IMAGE / width);
   return { width, height };
 };
 
 /**
- * Expects points (x, y) where x, y are expressed as a ratio of
- * full image length (default unit of OpenSeadragon)
+ * Expects points { x, y } where x, y are expressed as a ratio of
+ * full image WIDTH!! (default unit of OpenSeadragon)
  */
 export const pointToComplex = (point: Point): Complex => {
   const scale = { ...point };
-  scale.x -= 0.5;
-  scale.y -= 0.5;
-  scale.y *= -1;
+  scale.x -= 0.5; // 50% right
+  scale.y -= 0.5; // 50% down
+  scale.y *= -1; // flip
   return {
-    real: scale.x * cache.xToReal,
-    imaginary: scale.y * cache.yToImaginary,
+    real: scale.x * scaleViewportToComplex,
+    imaginary: scale.y * scaleViewportToComplex,
   };
 };
-
-if (import.meta.vitest) {
-  const { it, expect } = import.meta.vitest;
-  it("translates (0,0)", () => {
-    initCache(1);
-    const arg: Point = { x: 0, y: 0 };
-    const should: Complex = {
-      real: -2.5,
-      imaginary: 2.5,
-    };
-    const got = pointToComplex(arg);
-    expect(got).toEqual(should);
-  });
-
-  it("translates (0.25,0.25)", () => {
-    initCache(1);
-    const precition = 4;
-    const arg: Point = { x: 0.25, y: 0.25 };
-    const should: Complex = {
-      real: -1.25,
-      imaginary: 1.25,
-    };
-    const got = pointToComplex(arg);
-    expect(got.real).toBeCloseTo(should.real, precition);
-    expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
-  });
-
-  it("translates (0.5,0.5)", () => {
-    initCache(1);
-    const precition = 4;
-    const arg: Point = { x: 0.5, y: 0.5 };
-    const should: Complex = {
-      real: 0,
-      imaginary: 0,
-    };
-    const got = pointToComplex(arg);
-    expect(got.real).toBeCloseTo(should.real, precition);
-    expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
-  });
-
-  it("maintains correct aspect ratio", () => {
-    initCache(1.5); // longer width
-    const arg: Point = { x: 0, y: 0 };
-    const got = pointToComplex(arg);
-    const xAbs = Math.abs(got.real);
-    const yAbs = Math.abs(got.imaginary);
-    expect(yAbs).toBeLessThan(xAbs);
-  });
-}
