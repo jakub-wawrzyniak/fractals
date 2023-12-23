@@ -1,11 +1,16 @@
 import { Complex } from "../api";
 import { Point, Size } from "./config";
 
-let scaleViewportToComplex = 0;
+const cache = {
+  aspectRatio: 0,
+  viewportToComplex: 0,
+};
+
 export const __initCache = (aspectRatio: number) => {
   const MAX_SCALE = 5; // sets an upper bound for height/width in complex
   const factor = Math.min(1, aspectRatio);
-  scaleViewportToComplex = MAX_SCALE * factor;
+  cache.viewportToComplex = MAX_SCALE * factor;
+  cache.aspectRatio = aspectRatio;
 };
 
 export const getViewerDimentions = (aspectRatio: number): Size => {
@@ -28,10 +33,10 @@ export const getViewerDimentions = (aspectRatio: number): Size => {
 export const pointToComplex = (point: Point): Complex => {
   const scale = { ...point };
   scale.x -= 0.5; // 50% right
-  scale.y -= 0.5; // 50% down
+  scale.y -= 0.5 / cache.aspectRatio; // 50% down, with respect to width
   scale.y *= -1; // flip
   return {
-    real: scale.x * scaleViewportToComplex,
-    imaginary: scale.y * scaleViewportToComplex,
+    real: scale.x * cache.viewportToComplex,
+    imaginary: scale.y * cache.viewportToComplex,
   };
 };
