@@ -9,7 +9,7 @@ const createTileSource = (aspectRatio: number): any => {
     height,
     width,
     tileSize: 256,
-    tileOverlap: 0,
+    tileOverlap: 4,
     getTileUrl(level, x, y) {
       return `${level}/${x}-${y}`;
     },
