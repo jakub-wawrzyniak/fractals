@@ -1,6 +1,6 @@
 import "./index.css";
 import { render } from "solid-js/web";
-import { Fractal } from "./fractal";
+import { Fractal } from "./Fractal";
 
 const App = () => {
   return <Fractal />;

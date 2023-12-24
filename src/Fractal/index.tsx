@@ -2,6 +2,7 @@ import { Show, createEffect } from "solid-js";
 import { mountFractal } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
+import { setFractalAspectRatio } from "../shared/store.js";
 
 type AnyFn = () => void;
 export const Fractal = () => {
@@ -11,9 +12,13 @@ export const Fractal = () => {
   createEffect((clean: AnyFn) => {
     clean();
     if (ratio.isChanging()) return nothingToClean;
-    const viewer = mountFractal(ratio.debounced());
+    const viewer = mountFractal();
     return () => viewer.destroy();
   }, nothingToClean);
+
+  createEffect(() => {
+    setFractalAspectRatio(ratio.debounced());
+  });
 
   return (
     <div>

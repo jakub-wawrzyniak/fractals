@@ -1,5 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { JuliaImageRequest } from "../api";
+import { Size } from "../shared";
 
 export const VIEWER_OPTIONS = {
   id: "fractal",
@@ -16,8 +17,6 @@ export const VIEWER_OPTIONS = {
   showNavigator: false,
 } as const satisfies OpenSeadragon.Options;
 
-export type Point = { x: number; y: number };
-export type Size = { width: number; height: number };
 export type TileRequest = {
   level: number;
   x: number;

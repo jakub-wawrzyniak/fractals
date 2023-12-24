@@ -1,10 +1,8 @@
 import { expect, it } from "vitest";
-import { pointToComplex, __initCache } from "./utils";
-import { Complex } from "../api";
-import { Point } from "./config";
+import { pointToComplex } from "./utils";
+import { Complex, Point } from "../shared";
 
 it("translates (0,0)", () => {
-  __initCache(1);
   const arg: Point = { x: 0, y: 0 };
   const should: Complex = {
     real: -2.5,
@@ -15,7 +13,6 @@ it("translates (0,0)", () => {
 });
 
 it("translates (0.25,0.25)", () => {
-  __initCache(1);
   const precition = 4;
   const arg: Point = { x: 0.25, y: 0.25 };
   const should: Complex = {
@@ -28,7 +25,6 @@ it("translates (0.25,0.25)", () => {
 });
 
 it("translates (0.5,0.5)", () => {
-  __initCache(1);
   const precition = 4;
   const arg: Point = { x: 0.5, y: 0.5 };
   const should: Complex = {

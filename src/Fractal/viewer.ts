@@ -1,10 +1,10 @@
 import OpenSeadragon from "openseadragon";
-import { getViewerDimentions, pointToComplex } from "./utils";
+import { viewerDimensions, pointToComplex } from "./utils";
 import { JuliaImageRequest, calcImage } from "../api";
 import { OpenSeadragonTileSourcePrototype, VIEWER_OPTIONS } from "./config";
 
-const createTileSource = (aspectRatio: number): any => {
-  const { height, width } = getViewerDimentions(aspectRatio);
+const createTileSource = (): OpenSeadragon.TileSource => {
+  const { height, width } = viewerDimensions();
   const tileSource: OpenSeadragonTileSourcePrototype = {
     height,
     width,
@@ -92,13 +92,13 @@ const createTileSource = (aspectRatio: number): any => {
     },
   };
 
-  return tileSource;
+  return tileSource as unknown as OpenSeadragon.TileSource;
 };
 
-export const mountFractal = (aspectRatio: number) => {
+export const mountFractal = () => {
   const viewer = OpenSeadragon({
     ...VIEWER_OPTIONS,
-    tileSources: [createTileSource(aspectRatio)],
+    tileSources: [createTileSource()],
   });
   return viewer;
 };
