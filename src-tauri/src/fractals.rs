@@ -98,7 +98,7 @@ impl JuliaImage {
     }
 
     pub fn example() -> Self {
-        Self::new(Complex::new(-1.0, 1.5), Complex::new(1.0, -1.5), 100)
+        Self::new(Complex::new(-1.0, 1.5), Complex::new(1.0, -1.5), 1024)
     }
 
     #[inline]

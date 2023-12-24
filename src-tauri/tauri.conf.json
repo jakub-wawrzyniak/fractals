@@ -6,21 +6,17 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "fractals",
-    "version": "0.0.0"
+    "productName": "Fractal viewer",
+    "version": "0.0.1"
   },
   "tauri": {
     "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      }
+      "all": false
     },
     "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.tauri.dev",
+      "active": false,
+      "targets": ["appimage"],
+      "identifier": "com.github.jakub-wawrzyniak.fractals",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -34,11 +30,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
-        "title": "fractals",
-        "width": 800,
-        "height": 600
+        "title": "Fractal viewer"
       }
     ]
   }

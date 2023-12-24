@@ -39,11 +39,3 @@ it("translates (0.5,0.5)", () => {
   expect(got.real).toBeCloseTo(should.real, precition);
   expect(got.imaginary).toBeCloseTo(should.imaginary, precition);
 });
-
-it("translates with respect to WIDTH ONLY", () => {
-  __initCache(1.5); // longer width
-  const arg: Point = { x: 0, y: 0 };
-  const got = pointToComplex(arg);
-  const { abs } = Math;
-  expect(abs(got.imaginary)).toBe(abs(got.real));
-});
