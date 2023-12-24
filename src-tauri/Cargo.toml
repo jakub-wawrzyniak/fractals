@@ -39,10 +39,6 @@ lto = true # Enables link to optimizations
 opt-level = 3 # Optimize for binary size
 strip = true # Remove debug symbols
 
-# Enable a small amount of optimization in debug mode
-# [profile.dev]
-# opt-level = 1
+[profile.dev]
+opt-level = 1
 
-# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
-# [profile.dev.package."*"]
-# opt-level = 3
