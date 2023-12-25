@@ -10,9 +10,10 @@ export const Fractal = () => {
 
   let viewer: OpenSeadragon.Viewer;
   createEffect(() => {
-    store.juliaConstant.real; // track it
-    store.juliaConstant.imaginary; // track it
-
+    store.fractalConstant.real;
+    store.fractalConstant.imaginary;
+    store.fractalVariant;
+    // track those^ values
     viewer?.destroy();
     if (ratio.isChanging()) return;
     viewer = mountFractal();

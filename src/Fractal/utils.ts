@@ -1,8 +1,8 @@
-import { ALLOWED_COMPLEX_RANGE, Complex, Point, Size, store } from "../shared";
+import { Complex, Point, Size, fractalConfig, store } from "../shared";
 
 const viewportToComplex = () => {
   const factor = Math.min(1, store.fractalAspectRatio);
-  return ALLOWED_COMPLEX_RANGE * factor;
+  return fractalConfig().allowedRangeInComplex * factor;
 };
 
 export const viewerDimensions = (): Size => {

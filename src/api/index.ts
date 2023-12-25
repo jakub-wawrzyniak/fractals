@@ -23,9 +23,10 @@ export const calcImage = async (req: JuliaImageRequest): Promise<ImageData> => {
   // console.time(`invoke ${id(request)}`);
   const request: FullJuliaImageRequest = {
     ...req,
-    constant: { ...store.juliaConstant },
-    fractal_variant: "Mandelbrot",
+    fractal_variant: store.fractalVariant,
+    constant: { ...store.fractalConstant },
   };
+
   const pixels = await invoke<number[]>("calc_image", { request });
   // console.timeEnd(`invoke ${id(request)}`);
   // console.time(`transform ${id(request)}`);

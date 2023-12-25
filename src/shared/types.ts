@@ -9,4 +9,3 @@ export type Complex = {
 export type HasChild = {
   children: JSXElement;
 };
-export type FractalVariant = "Mandelbrot" | "Newton" | "BurningShip";

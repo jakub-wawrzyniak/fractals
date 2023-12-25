@@ -1,8 +1,8 @@
-use num::Complex;
+use num::{complex::ComplexFloat, Complex};
 use serde::Deserialize;
 
 const MAX_ITERATION: u32 = 100;
-const ESCAPE_RADIUS: f64 = 10.0;
+const ESCAPE_RADIUS: f64 = 7.0;
 
 pub type FractalNextValue = fn(Complex<f64>, &Complex<f64>) -> Complex<f64>;
 
@@ -32,8 +32,8 @@ pub fn mandelbrot_next(current: Complex<f64>, constant: &Complex<f64>) -> Comple
 }
 
 pub fn burning_ship_next(current: Complex<f64>, constant: &Complex<f64>) -> Complex<f64> {
-    let sum = current.re.abs() + current.im.abs();
-    sum + constant
+    let sum = Complex::new(current.re.abs(), current.im.abs());
+    sum.powi(2) + constant
 }
 
 pub fn newton_next(current: Complex<f64>, _: &Complex<f64>) -> Complex<f64> {

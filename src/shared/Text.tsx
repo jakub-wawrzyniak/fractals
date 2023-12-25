@@ -2,9 +2,9 @@ import { HasChild } from "./types";
 
 export const Header = (props: HasChild) => {
   return (
-    <h2 class="font-poppins font-regular text-center text-[26px] pb-3">
+    <h3 class="font-poppins font-regular text-center text-2xl">
       {props.children}
-    </h2>
+    </h3>
   );
 };
 
@@ -15,3 +15,5 @@ export const Equasion = (props: HasChild) => {
 export const Number = (props: HasChild) => {
   return <span class="font-mono">{props.children}</span>;
 };
+
+// export const TextButton = {};
