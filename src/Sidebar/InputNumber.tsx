@@ -7,6 +7,7 @@ type InputNumberProps = {
   min: number;
   max: number;
   unit?: string;
+  class?: string;
 };
 
 const UNIT = 0.5;
@@ -14,16 +15,16 @@ export const InputNumber = (props: InputNumberProps) => {
   const max = () => Math.min(UNIT, props.max);
   const min = () => Math.max(-UNIT, props.min);
   return (
-    <label class="form-control w-full max-w-xs">
+    <label class="form-control w-full">
       <div class="label">
         <span class="label-text">{props.label}</span>
       </div>
       <input
         type="range"
-        class="range range-xs"
+        class={`range range-xs ${props.class ?? ""}`}
         max={max()}
         min={min()}
-        step={0.00001}
+        step={0.001}
         value={props.getNumber()}
         onInput={(e) => props.setNumber(parseFloat(e.target.value))}
       />
