@@ -1,6 +1,6 @@
 import {
   FRACTAL_CONFIG,
-  FRACTAL_VARIANT,
+  FRACTALS,
   Header,
   changeFractalVariant,
   fractalConfig,
@@ -18,7 +18,7 @@ export const SelectFractal = () => {
         tabindex="0"
         class="dropdown-content z-[1] menu p-2 shadow bg-base-300 rounded-box w-full flex flex-col gap-2"
       >
-        {FRACTAL_VARIANT.map((variant) => (
+        {FRACTALS.map((variant) => (
           <li class="w-full">
             <button
               class="w-full p-2"

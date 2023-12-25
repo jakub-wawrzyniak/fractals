@@ -1,29 +1,7 @@
-use crate::fractal::{how_quickly_diverges, mandelbrot_next, Fractal, FractalNextValue};
+use crate::fractal::GetLumaForPoint;
 use image;
 use num::Complex;
-use serde::Deserialize;
 use std::vec;
-
-#[derive(Deserialize, Clone, Copy)]
-pub struct Point {
-    pub imaginary: f64,
-    pub real: f64,
-}
-
-impl Into<Complex<f64>> for Point {
-    fn into(self) -> Complex<f64> {
-        Complex::new(self.real, self.imaginary)
-    }
-}
-
-#[derive(Deserialize, Clone, Copy)]
-pub struct FractalRequest {
-    pub constant: Point,
-    pub fractal_variant: Fractal,
-    pub top_left: Point,
-    pub bottom_right: Point,
-    pub width_px: f64,
-}
 
 pub struct FractalImage {
     height_px: usize,
@@ -71,13 +49,13 @@ impl FractalImage {
         self.pixels[id] = value;
     }
 
-    pub fn render(mut self, next_value: FractalNextValue) -> Self {
+    pub fn render(mut self, fractal: GetLumaForPoint) -> Self {
         let mut real = self.real_min;
         for x in 0..self.width_px {
             let mut imag = self.imag_min;
             for y in 0..self.height_px {
                 let point = Complex::new(real, imag);
-                let color = how_quickly_diverges(point, &self.constant, next_value);
+                let color = fractal(point, &self.constant);
                 self.set_pixel(x, y, color);
                 imag += self.step;
             }
@@ -114,22 +92,10 @@ impl FractalImage {
     }
 }
 
-impl From<FractalRequest> for FractalImage {
-    fn from(request: FractalRequest) -> Self {
-        Self::new(
-            request.constant.into(),
-            request.top_left.into(),
-            request.bottom_right.into(),
-            request.width_px as u32,
-        )
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::fractal::mandelbrot_next;
-
     use super::FractalImage;
+    use crate::fractal::mandelbrot;
     use divan;
     use num::Complex;
 
@@ -143,7 +109,7 @@ mod tests {
     }
 
     fn default_rendered() -> FractalImage {
-        default_image().render(mandelbrot_next)
+        default_image().render(mandelbrot)
     }
 
     #[divan::bench(sample_count = 20)]

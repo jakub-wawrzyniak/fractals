@@ -7,3 +7,8 @@ export const clip = (
   validated = Math.max(validated, lowBound);
   return validated;
 };
+
+export const assert = (condition: boolean, where: string, what: string) => {
+  if (condition === true) return;
+  throw `${where}: ${what}`;
+};

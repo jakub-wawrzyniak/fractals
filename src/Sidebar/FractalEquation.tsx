@@ -1,23 +1,25 @@
 import { Show } from "solid-js";
-import { Equasion, fractalConfig, store } from "../shared";
+import { Equasion, fractalConfig, getConstantOrThrow } from "../shared";
 
 export const FractalEquation = () => {
+  const constant = () => getConstantOrThrow("FractalEquation");
+
   const constantSign = () => {
-    return store.fractalConstant.imaginary < 0 ? " - " : " + ";
+    return constant().imaginary < 0 ? " - " : " + ";
   };
 
   const constantReal = () => {
-    return store.fractalConstant.real.toFixed(3);
+    return constant().real.toFixed(3);
   };
 
   const constantImaginary = () => {
-    return Math.abs(store.fractalConstant.imaginary).toFixed(3) + "i";
+    return Math.abs(constant().imaginary).toFixed(3) + "i";
   };
 
   return (
     <div class="py-2 w-full">
       <Equasion>{fractalConfig().equation}</Equasion>
-      <Show when={fractalConfig().usesConstant}>
+      <Show when={fractalConfig().initConstant !== null}>
         <Equasion>
           C = <span class="text-primary font-bold">{constantReal()}</span>
           {constantSign()}

@@ -12,13 +12,19 @@ import { InputNumber } from "./InputNumber";
 import { SelectFractal } from "./SelectFractal";
 
 export const Sidebar = () => {
+  const getOrThrow = (key: "real" | "imaginary") => () => {
+    if (store.fractalConstant === null)
+      throw "InputNumber: Attempt to access a constant, but it was null";
+    return store.fractalConstant[key];
+  };
+
   return (
     <aside class="w-[20vw] min-w-[350px] px-6 py-8 flex flex-col gap-2">
       <SelectFractal />
       <FractalEquation />
-      <Show when={fractalConfig().usesConstant}>
+      <Show when={fractalConfig().initConstant !== null}>
         <InputNumber
-          getNumber={() => store.fractalConstant.real}
+          getNumber={getOrThrow("real")}
           setNumber={setConstantReal}
           max={realBounds().max}
           min={realBounds().min}
@@ -26,7 +32,7 @@ export const Sidebar = () => {
           class="range-primary"
         />
         <InputNumber
-          getNumber={() => store.fractalConstant.imaginary}
+          getNumber={getOrThrow("imaginary")}
           setNumber={setConstantImaginary}
           max={imaginaryBounds().max}
           min={imaginaryBounds().min}

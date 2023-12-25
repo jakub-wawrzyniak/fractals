@@ -10,8 +10,8 @@ export const Fractal = () => {
 
   let viewer: OpenSeadragon.Viewer;
   createEffect(() => {
-    store.fractalConstant.real;
-    store.fractalConstant.imaginary;
+    store.fractalConstant?.real;
+    store.fractalConstant?.imaginary;
     store.fractalVariant;
     // track those^ values
     viewer?.destroy();

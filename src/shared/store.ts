@@ -1,25 +1,31 @@
 import {
   DEFAULT_ASPECT_RATIO,
   FRACTAL_CONFIG,
-  FRACTAL_VARIANT,
-  FractalVariant,
+  FRACTALS,
+  Fractal,
 } from "./constants";
 import { createStore } from "solid-js/store";
 import { clip } from "./utils";
-import { Complex } from "./types";
 import { batch } from "solid-js";
+import { Complex } from ".";
 
 type AppStore = {
-  fractalConstant: Complex;
   fractalAspectRatio: number;
-  fractalVariant: FractalVariant;
+  fractalVariant: Fractal;
+  fractalConstant: Complex | null;
 };
 
-const initVariant = FRACTAL_VARIANT[0];
+const initConstant = (variant: Fractal) => {
+  const constant = FRACTAL_CONFIG[variant].initConstant;
+  if (constant === null) return null;
+  return { ...constant }; // deep copy, so that the default value will not be overwritten
+};
+
+const initFractal = FRACTALS[0];
 const initStore: AppStore = {
-  fractalVariant: initVariant,
+  fractalVariant: initFractal,
+  fractalConstant: initConstant(initFractal),
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
-  fractalConstant: { ...FRACTAL_CONFIG[initVariant].defaultConstant },
 };
 
 const [store, setStore] = createStore(initStore);
@@ -52,37 +58,40 @@ export const realBounds = (): Bounds => {
 };
 
 export const setConstantImaginary = (value: number) => {
+  console.log("imag");
   const { min, max } = imaginaryBounds();
   setStore("fractalConstant", "imaginary", clip(min, max, value));
 };
 
 export const setConstantReal = (value: number) => {
+  console.log("real");
   const { min, max } = realBounds();
   setStore("fractalConstant", "real", clip(min, max, value));
 };
 
 export const setFractalAspectRatio = (value: number) => {
+  console.log("aspect");
   batch(() => {
     setStore("fractalAspectRatio", value);
-    setConstantImaginary(store.fractalConstant.imaginary);
-    // ^imaginary constant might go out of bounds on aspectRatio
-    // change, must revalidate
+    if (store.fractalConstant !== null) {
+      setConstantImaginary(store.fractalConstant.imaginary);
+      // ^imaginary constant might go out of bounds on aspectRatio
+      // change, must revalidate
+    }
   });
 };
 
-export const changeFractalVariant = (variant: FractalVariant) => {
+export const changeFractalVariant = (variant: Fractal) => {
+  console.log("variant");
   batch(() => {
     setStore("fractalVariant", variant);
-    const config = FRACTAL_CONFIG[variant];
-    if (config.usesConstant) {
-      console.log("updating");
-      console.log(config.defaultConstant);
-      setStore("fractalConstant", "real", config.defaultConstant.real);
-      setStore(
-        "fractalConstant",
-        "imaginary",
-        config.defaultConstant.imaginary
-      );
-    }
+    setStore("fractalConstant", initConstant(variant));
   });
+};
+
+export const getConstantOrThrow = (where: string) => {
+  const { fractalConstant: constant, fractalVariant: variant } = store;
+  if (constant === null)
+    throw `${where}: attempt to access a null-value constant (${variant})`;
+  return constant;
 };
