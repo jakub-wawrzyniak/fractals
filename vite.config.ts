@@ -18,7 +18,4 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-  define: {
-    "import.meta.vitest": "undefined",
-  },
 }));
