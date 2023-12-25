@@ -1,5 +1,6 @@
 use divan;
-mod fractals;
+mod fractal;
+mod renderer;
 
 fn main() {
     divan::main();

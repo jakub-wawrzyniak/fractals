@@ -1,12 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-pub mod fractals;
-use fractals::{JuliaImage, JuliaImageRequest};
+pub mod fractal;
+pub mod renderer;
+use renderer::{FractalImage, FractalRequest};
 
 #[tauri::command]
-async fn calc_image(request: JuliaImageRequest) -> Vec<u8> {
-    JuliaImage::from(request).compute().take_ui_pixels()
+async fn calc_image(request: FractalRequest) -> Vec<u8> {
+    FractalImage::from(request)
+        .render(request.fractal_variant.into())
+        .take_ui_pixels()
 }
 
 fn main() {

@@ -1,3 +1,4 @@
+use crate::fractal::{how_quickly_diverges, mandelbrot_next, Fractal, FractalNextValue};
 use image;
 use num::Complex;
 use serde::Deserialize;
@@ -16,52 +17,15 @@ impl Into<Complex<f64>> for Point {
 }
 
 #[derive(Deserialize, Clone, Copy)]
-pub struct JuliaImageRequest {
+pub struct FractalRequest {
     pub constant: Point,
+    pub fractal_variant: Fractal,
     pub top_left: Point,
     pub bottom_right: Point,
     pub width_px: f64,
 }
 
-struct JuliaSet {
-    escape_radius: f64,
-    constant: Complex<f64>,
-}
-
-impl JuliaSet {
-    const MAX_ITERATION: u32 = 100;
-    fn new(constant: Complex<f64>) -> Self {
-        // let discriminant: f64 = 1.0 - 4.0 * constant.norm();
-        let escape_radius = 10.0;
-        Self {
-            escape_radius,
-            constant,
-        }
-    }
-
-    fn next_value(&self, this_value: Complex<f64>) -> Complex<f64> {
-        this_value.powi(2) + self.constant
-    }
-
-    fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
-        let Complex { im, re } = last_point;
-        let abs = (im.powi(2) + re.powi(2)).log10().log10();
-        let value = (iterations as f64) + 1.0 - abs / 2.0_f64.log10();
-        (value * 20.0).floor().max(0.0) as u8
-    }
-
-    fn how_quickly_diverges(&self, start: Complex<f64>) -> u8 {
-        let mut iteration = 0;
-        let mut current = start;
-        while iteration < JuliaSet::MAX_ITERATION && current.norm() < self.escape_radius {
-            current = self.next_value(current);
-            iteration += 1;
-        }
-        JuliaSet::normalize_divergence(current, iteration)
-    }
-}
-
-pub struct JuliaImage {
+pub struct FractalImage {
     height_px: usize,
     width_px: usize,
     step: f64,
@@ -71,7 +35,7 @@ pub struct JuliaImage {
     constant: Complex<f64>,
 }
 
-impl JuliaImage {
+impl FractalImage {
     pub fn new(
         constant: Complex<f64>,
         domain_top_left_boundary: Complex<f64>,
@@ -101,30 +65,19 @@ impl JuliaImage {
         }
     }
 
-    pub fn example() -> Self {
-        Self::new(
-            Complex::new(0.34, 0.08),
-            Complex::new(-1.0, 1.5),
-            Complex::new(1.0, -1.5),
-            1024,
-        )
-    }
-
     #[inline]
     fn set_pixel(&mut self, x: usize, y: usize, value: u8) {
         let id = self.width_px * y + x;
         self.pixels[id] = value;
     }
 
-    pub fn compute(mut self) -> Self {
-        let julia = JuliaSet::new(self.constant);
-
+    pub fn render(mut self, next_value: FractalNextValue) -> Self {
         let mut real = self.real_min;
         for x in 0..self.width_px {
             let mut imag = self.imag_min;
             for y in 0..self.height_px {
                 let point = Complex::new(real, imag);
-                let color = julia.how_quickly_diverges(point);
+                let color = how_quickly_diverges(point, &self.constant, next_value);
                 self.set_pixel(x, y, color);
                 imag += self.step;
             }
@@ -147,10 +100,6 @@ impl JuliaImage {
         };
     }
 
-    pub fn save(&self) {
-        self.save_as("out.png".into());
-    }
-
     pub fn take_pixels(self) -> Vec<u8> {
         self.pixels
     }
@@ -165,8 +114,8 @@ impl JuliaImage {
     }
 }
 
-impl From<JuliaImageRequest> for JuliaImage {
-    fn from(request: JuliaImageRequest) -> Self {
+impl From<FractalRequest> for FractalImage {
+    fn from(request: FractalRequest) -> Self {
         Self::new(
             request.constant.into(),
             request.top_left.into(),
@@ -178,35 +127,33 @@ impl From<JuliaImageRequest> for JuliaImage {
 
 #[cfg(test)]
 mod tests {
-    use super::JuliaImage;
-    use divan;
+    use crate::fractal::mandelbrot_next;
 
-    fn default_image() -> JuliaImage {
-        let unit = 2.5;
-        let top = num::Complex::new(-unit, unit);
-        let bottom = num::Complex::new(unit, -unit);
-        let constant = num::Complex::new(0.34, 0.08);
-        JuliaImage::new(constant, top, bottom, 1024)
+    use super::FractalImage;
+    use divan;
+    use num::Complex;
+
+    fn default_image() -> FractalImage {
+        FractalImage::new(
+            Complex::new(0.34, 0.08),
+            Complex::new(-1.0, 1.5),
+            Complex::new(1.0, -1.5),
+            512,
+        )
     }
 
-    fn default_tile() -> JuliaImage {
-        let unit = 2.5;
-        let top = num::Complex::new(-unit, unit);
-        let bottom = num::Complex::new(0.0, 0.0);
-        let constant = num::Complex::new(0.34, 0.08);
-        JuliaImage::new(constant, top, bottom, 512)
+    fn default_rendered() -> FractalImage {
+        default_image().render(mandelbrot_next)
     }
 
     #[divan::bench(sample_count = 20)]
     fn default_tauri_square(bencher: divan::Bencher) {
-        bencher.bench(|| {
-            default_image().compute();
-        })
+        bencher.bench(|| default_rendered())
     }
 
     #[divan::bench]
     fn image_vec_transformation(bencher: divan::Bencher) {
-        let image = default_image().compute();
+        let image = default_rendered();
         bencher.bench(|| {
             image.take_ui_pixels();
         })
@@ -214,24 +161,14 @@ mod tests {
 
     #[divan::bench]
     fn image_vec_serialization(bencher: divan::Bencher) {
-        let image = default_image().compute().take_ui_pixels();
+        let image = default_rendered().take_ui_pixels();
         bencher.bench(|| {
             serde_json::to_string(&image).unwrap();
         })
     }
 
     #[test]
-    fn example_saves() {
-        JuliaImage::example()
-            .compute()
-            .save_as("example.png".into());
-    }
-    #[test]
     fn default_image_saves() {
-        default_image().compute().save_as("default.png".into());
-    }
-    #[test]
-    fn default_tile_saves() {
-        default_tile().compute().save_as("tile.png".into());
+        default_rendered().save_as("default.png".into());
     }
 }
