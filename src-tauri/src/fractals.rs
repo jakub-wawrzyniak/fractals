@@ -17,6 +17,7 @@ impl Into<Complex<f64>> for Point {
 
 #[derive(Deserialize, Clone, Copy)]
 pub struct JuliaImageRequest {
+    pub constant: Point,
     pub top_left: Point,
     pub bottom_right: Point,
     pub width_px: f64,
@@ -67,10 +68,12 @@ pub struct JuliaImage {
     real_min: f64,
     imag_min: f64,
     pixels: Vec<u8>,
+    constant: Complex<f64>,
 }
 
 impl JuliaImage {
     pub fn new(
+        constant: Complex<f64>,
         domain_top_left_boundary: Complex<f64>,
         domain_bottom_right_boundary: Complex<f64>,
         resolution: u32,
@@ -88,6 +91,7 @@ impl JuliaImage {
         let height_px = ((imag_max - imag_min) / step).floor() as usize;
 
         Self {
+            constant,
             real_min,
             imag_min,
             step,
@@ -98,7 +102,12 @@ impl JuliaImage {
     }
 
     pub fn example() -> Self {
-        Self::new(Complex::new(-1.0, 1.5), Complex::new(1.0, -1.5), 1024)
+        Self::new(
+            Complex::new(0.34, 0.08),
+            Complex::new(-1.0, 1.5),
+            Complex::new(1.0, -1.5),
+            1024,
+        )
     }
 
     #[inline]
@@ -108,8 +117,7 @@ impl JuliaImage {
     }
 
     pub fn compute(mut self) -> Self {
-        let constant = Complex::new(0.34, 0.08);
-        let julia = JuliaSet::new(constant);
+        let julia = JuliaSet::new(self.constant);
 
         let mut real = self.real_min;
         for x in 0..self.width_px {
@@ -160,6 +168,7 @@ impl JuliaImage {
 impl From<JuliaImageRequest> for JuliaImage {
     fn from(request: JuliaImageRequest) -> Self {
         Self::new(
+            request.constant.into(),
             request.top_left.into(),
             request.bottom_right.into(),
             request.width_px as u32,
@@ -176,14 +185,16 @@ mod tests {
         let unit = 2.5;
         let top = num::Complex::new(-unit, unit);
         let bottom = num::Complex::new(unit, -unit);
-        JuliaImage::new(top, bottom, 1024)
+        let constant = num::Complex::new(0.34, 0.08);
+        JuliaImage::new(constant, top, bottom, 1024)
     }
 
     fn default_tile() -> JuliaImage {
         let unit = 2.5;
         let top = num::Complex::new(-unit, unit);
         let bottom = num::Complex::new(0.0, 0.0);
-        JuliaImage::new(top, bottom, 512)
+        let constant = num::Complex::new(0.34, 0.08);
+        JuliaImage::new(constant, top, bottom, 512)
     }
 
     #[divan::bench(sample_count = 20)]

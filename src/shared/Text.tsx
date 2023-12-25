@@ -11,3 +11,7 @@ export const Header = (props: HasChild) => {
 export const Equasion = (props: HasChild) => {
   return <p class="font-mono text-center text-lg">{props.children}</p>;
 };
+
+export const Number = (props: HasChild) => {
+  return <span class="font-mono">{props.children}</span>;
+};

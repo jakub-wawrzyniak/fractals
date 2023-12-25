@@ -2,19 +2,21 @@ import { Show, createEffect } from "solid-js";
 import { mountFractal } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
-import { setFractalAspectRatio } from "../shared/store.js";
+import { setFractalAspectRatio, store } from "../shared";
+import OpenSeadragon from "openseadragon";
 
-type AnyFn = () => void;
 export const Fractal = () => {
   const ratio = useAspectRatio(VIEWER_OPTIONS.id);
-  const nothingToClean = () => undefined;
 
-  createEffect((clean: AnyFn) => {
-    clean();
-    if (ratio.isChanging()) return nothingToClean;
-    const viewer = mountFractal();
-    return () => viewer.destroy();
-  }, nothingToClean);
+  let viewer: OpenSeadragon.Viewer;
+  createEffect(() => {
+    store.juliaConstant.real; // track it
+    store.juliaConstant.imaginary; // track it
+
+    viewer?.destroy();
+    if (ratio.isChanging()) return;
+    viewer = mountFractal();
+  });
 
   createEffect(() => {
     setFractalAspectRatio(ratio.debounced());

@@ -37,6 +37,7 @@ export const Sidebar = () => {
         max={imaginaryBounds().max}
         min={imaginaryBounds().min}
         label="C: imaginary component"
+        unit="i"
       />
     </aside>
   );

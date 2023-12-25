@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api";
 import { pixelsToImage } from "./utils";
-import { Complex } from "../shared";
+import { Complex, store } from "../shared";
 
 // const id = (req: JuliaImageRequest) => {
 //   const a = req.bottom_right;
@@ -14,14 +14,20 @@ export type JuliaImageRequest = {
   width_px: number;
 };
 
-export const calcImage = async (
-  request: JuliaImageRequest
-): Promise<ImageData> => {
+type FullJuliaImageRequest = JuliaImageRequest & {
+  constant: Complex;
+};
+
+export const calcImage = async (req: JuliaImageRequest): Promise<ImageData> => {
   // console.time(`invoke ${id(request)}`);
+  const request: FullJuliaImageRequest = {
+    ...req,
+    constant: { ...store.juliaConstant },
+  };
   const pixels = await invoke<number[]>("calc_image", { request });
   // console.timeEnd(`invoke ${id(request)}`);
   // console.time(`transform ${id(request)}`);
-  const image = pixelsToImage(pixels, request.width_px);
+  const image = pixelsToImage(pixels, req.width_px);
   // console.timeEnd(`transform ${id(request)}`);
   return image;
 };
