@@ -45,10 +45,11 @@ impl Into<GetLumaForPoint> for Fractal {
 impl From<FractalRequest> for FractalImage {
     fn from(request: FractalRequest) -> Self {
         Self::new(
+            request.fractal_variant.into(),
             request.constant.into(),
             request.top_left.into(),
             request.bottom_right.into(),
-            request.width_px as u32,
+            request.width_px as usize,
         )
     }
 }

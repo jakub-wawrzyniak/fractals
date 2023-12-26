@@ -27,6 +27,21 @@
       },
       // task for the `beforeBuildCommand` if used, must be configured in `.vscode/tasks.json`
       "preLaunchTask": "ui:build"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/src-tauri",
+      "relativePathBase": "${workspaceFolder}/src-tauri",
+
+      "name": "Debug unit tests",
+      "cargo": {
+        "args": ["test", "--no-run", "--manifest-path=./src-tauri/Cargo.toml"],
+        "filter": {
+          "name": "fractals",
+          "kind": "bin"
+        }
+      }
     }
   ]
 }

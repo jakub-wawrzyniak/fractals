@@ -40,5 +40,4 @@ opt-level = 3 # Optimize for binary size
 strip = true # Remove debug symbols
 
 [profile.dev]
-opt-level = 1
-
+# opt-level = 3

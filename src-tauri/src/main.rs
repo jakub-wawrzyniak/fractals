@@ -9,9 +9,7 @@ use renderer::FractalImage;
 
 #[tauri::command]
 async fn calc_image(request: FractalRequest) -> Vec<u8> {
-    FractalImage::from(request)
-        .render(request.fractal_variant.into())
-        .take_ui_pixels()
+    FractalImage::from(request).render().take_ui_pixels()
 }
 
 fn main() {
