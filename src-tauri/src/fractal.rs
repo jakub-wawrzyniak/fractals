@@ -1,9 +1,7 @@
 use num::{complex::ComplexFloat, Complex};
-
-const MAX_ITERATION: u32 = 64;
-const ESCAPE_RADIUS: f64 = 7.0;
-
 pub type GetLumaForPoint = fn(Complex<f64>, &Complex<f64>) -> u8;
+
+const MAX_ITERATION: u32 = 1024;
 
 fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
     let abs = last_point.abs().log2().log2();
@@ -18,6 +16,7 @@ fn normalize_reverse(last_point: Complex<f64>, iterations: u32) -> u8 {
 }
 
 pub fn mandelbrot(point: Complex<f64>, _: &Complex<f64>) -> u8 {
+    const ESCAPE_RADIUS: f64 = 3.0;
     let mut iteration = 0;
     let mut current = Complex::new(0.0, 0.0);
     while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
@@ -28,6 +27,7 @@ pub fn mandelbrot(point: Complex<f64>, _: &Complex<f64>) -> u8 {
 }
 
 pub fn julia_set(point: Complex<f64>, constant: &Complex<f64>) -> u8 {
+    const ESCAPE_RADIUS: f64 = 2.0;
     let mut iteration = 0;
     let mut current = point;
     while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
@@ -38,6 +38,7 @@ pub fn julia_set(point: Complex<f64>, constant: &Complex<f64>) -> u8 {
 }
 
 pub fn burning_ship(point: Complex<f64>, _: &Complex<f64>) -> u8 {
+    const ESCAPE_RADIUS: f64 = 3.0;
     let mut iteration = 0;
     let mut current = Complex::new(0.0, 0.0);
     while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
@@ -48,6 +49,7 @@ pub fn burning_ship(point: Complex<f64>, _: &Complex<f64>) -> u8 {
 }
 
 pub fn newton(point: Complex<f64>, _: &Complex<f64>) -> u8 {
+    const ESCAPE_RADIUS: f64 = 2.0;
     let mut iteration = 0;
     let mut current = point;
     while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
@@ -56,5 +58,5 @@ pub fn newton(point: Complex<f64>, _: &Complex<f64>) -> u8 {
         current = nominator / denominator;
         iteration += 1;
     }
-    normalize_reverse(current, iteration)
+    normalize_divergence(current, iteration)
 }

@@ -128,7 +128,7 @@ impl FractalImage {
         if chunks > 2 {
             chunks -= 1; // Spare one thread for UI
         }
-        self.delegate_and_run(chunks)
+        self.delegate_and_run(chunks.max(4))
     }
 }
 
@@ -183,6 +183,33 @@ mod tests {
             1024,
         )
     }
+    fn julia_set() -> FractalImage {
+        FractalImage::new(
+            fractal::julia_set,
+            Complex::new(0.34, 0.08),
+            Complex::new(-2.0, 2.0),
+            Complex::new(2.0, -2.0),
+            1024,
+        )
+    }
+    fn burning_ship() -> FractalImage {
+        FractalImage::new(
+            fractal::burning_ship,
+            Complex::new(0.34, 0.08),
+            Complex::new(-2.35, 2.25),
+            Complex::new(2.65, -2.75),
+            1024,
+        )
+    }
+    fn newton() -> FractalImage {
+        FractalImage::new(
+            fractal::newton,
+            Complex::new(0.0, 0.0),
+            Complex::new(-3.0, 3.0),
+            Complex::new(3.0, -3.0),
+            1024,
+        )
+    }
 
     fn default_threads() -> FractalRendered {
         mandelbrot().render_on_threads()
@@ -190,7 +217,7 @@ mod tests {
 
     #[divan::bench]
     fn image_vec_transformation(bencher: divan::Bencher) {
-        let image = rendered_default();
+        let image = rendered_mandelbrot();
         bencher.bench(|| {
             image.take_ui_pixels();
         })
@@ -198,26 +225,41 @@ mod tests {
 
     #[divan::bench]
     fn image_vec_serialization(bencher: divan::Bencher) {
-        let image = rendered_default().take_ui_pixels();
+        let image = rendered_mandelbrot().take_ui_pixels();
         bencher.bench(|| {
             serde_json::to_string(&image).unwrap();
         })
     }
 
-    #[divan::bench(sample_count = 30)]
-    fn rendered_default() -> FractalRendered {
+    #[divan::bench(sample_count = 10, threads = 2)]
+    fn rendered_mandelbrot() -> FractalRendered {
         mandelbrot().render()
     }
 
-    #[divan::bench(sample_count = 30, threads = false)]
-    fn rendered_threaded(bencher: divan::Bencher) {
+    #[divan::bench(sample_count = 10, threads = 2)]
+    fn rendered_julia_set() -> FractalRendered {
+        julia_set().render()
+    }
+
+    #[divan::bench(sample_count = 10, threads = 2)]
+    fn rendered_burning_ship() -> FractalRendered {
+        burning_ship().render()
+    }
+
+    #[divan::bench(sample_count = 3, threads = 3)]
+    fn rendered_newton() -> FractalRendered {
+        newton().render()
+    }
+
+    #[divan::bench(sample_count = 10, threads = false)]
+    fn rendered_mandelbrot_threaded(bencher: divan::Bencher) {
         bencher.bench(|| {
             default_threads();
         })
     }
 
-    #[divan::bench(sample_count = 30, threads = false)]
-    fn rendered_threads_two(bencher: divan::Bencher) {
+    #[divan::bench(sample_count = 10, threads = false)]
+    fn rendered_mandelbrot_threads_two(bencher: divan::Bencher) {
         bencher.bench(|| {
             mandelbrot().delegate_and_run(2);
         })
@@ -225,7 +267,7 @@ mod tests {
 
     #[test]
     fn render_default_saves() {
-        rendered_default().save_as("default.png".into());
+        rendered_mandelbrot().save_as("default.png".into());
     }
 
     #[test]
@@ -236,7 +278,7 @@ mod tests {
     #[test]
     fn render_two_threads_saves() {
         mandelbrot()
-            .delegate_and_run(1)
+            .delegate_and_run(2)
             .save_as("two-threads.png".into());
     }
 }
