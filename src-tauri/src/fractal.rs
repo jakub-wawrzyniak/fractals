@@ -6,10 +6,15 @@ const ESCAPE_RADIUS: f64 = 7.0;
 pub type GetLumaForPoint = fn(Complex<f64>, &Complex<f64>) -> u8;
 
 fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
-    let Complex { im, re } = last_point;
-    let abs = (im.powi(2) + re.powi(2)).log10().log10();
-    let value = (iterations as f64) + 1.0 - abs / 2.0_f64.log10();
-    (value * 20.0).floor().max(0.0) as u8
+    let abs = last_point.abs().log2().log2();
+    let value: f64 = (iterations as f64) + 1.0 - abs;
+    (value * 12.0).floor().max(0.0).min(256.0) as u8
+}
+
+fn normalize_reverse(last_point: Complex<f64>, iterations: u32) -> u8 {
+    let abs = last_point.abs().log2().log2();
+    let value: f64 = abs - (iterations as f64) - 1.0 + 256.0;
+    (value * 12.0).floor().max(0.0).min(256.0) as u8
 }
 
 pub fn mandelbrot(point: Complex<f64>, _: &Complex<f64>) -> u8 {
@@ -51,5 +56,5 @@ pub fn newton(point: Complex<f64>, _: &Complex<f64>) -> u8 {
         current = nominator / denominator;
         iteration += 1;
     }
-    normalize_divergence(current, iteration)
+    normalize_reverse(current, iteration)
 }

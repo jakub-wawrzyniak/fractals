@@ -17,6 +17,8 @@ export const viewerDimensions = (): Size => {
   return { width, height };
 };
 
+const graphOffset = () => fractalConfig().offsetGraphInComplex;
+
 /**
  * Expects points { x, y } where x, y are expressed as a ratio of
  * full image WIDTH!! (default unit of OpenSeadragon)
@@ -27,7 +29,7 @@ export const pointToComplex = (point: Point): Complex => {
   scale.y -= 0.5 / store.fractalAspectRatio; // 50% down, with respect to width
   scale.y *= -1; // flip
   return {
-    real: scale.x * viewportToComplex(),
-    imaginary: scale.y * viewportToComplex(),
+    real: scale.x * viewportToComplex() + graphOffset().real,
+    imaginary: scale.y * viewportToComplex() + graphOffset().imaginary,
   };
 };
