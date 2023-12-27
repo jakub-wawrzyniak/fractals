@@ -3,7 +3,7 @@ import { mountFractal } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
 import { setFractalAspectRatio, store } from "../shared";
-import { SelectFractalPart } from "./SelectViewerPart.jsx";
+import { SelectFractalPart } from "./SelectFractalPart.jsx";
 import OpenSeadragon from "openseadragon";
 
 export const Fractal = () => {

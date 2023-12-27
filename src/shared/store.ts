@@ -15,7 +15,7 @@ type AppStore = {
   fractalConstant: Complex | null;
   fractalFragmentSelection: Size &
     Point & {
-      isSelecting: boolean;
+      canSelect: boolean;
     };
 };
 
@@ -31,7 +31,7 @@ const initStore: AppStore = {
   fractalConstant: initConstant(initFractal),
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
   fractalFragmentSelection: {
-    isSelecting: true,
+    canSelect: true,
     x: 0,
     y: 0,
     width: 0,
