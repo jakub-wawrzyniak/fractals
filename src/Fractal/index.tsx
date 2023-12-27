@@ -2,26 +2,33 @@ import { Show, createEffect } from "solid-js";
 import { fractalViewer, mountFractalViewer } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
-import { setFractalAspectRatio, store } from "../shared";
+import { setViewerAspectRatio, store } from "../shared";
 import { SelectFractalPart } from "./SelectFractalPart.jsx";
 import { ColorOverlay } from "./ColorOverlay.jsx";
 
 export const Fractal = () => {
   const ratio = useAspectRatio(VIEWER_OPTIONS.id);
 
-  createEffect(() => {
-    store.fractalConstant?.real;
-    store.fractalConstant?.imaginary;
-    store.fractalVariant;
-    // track those^ values
+  /**
+   * Tracks values, for which the whole
+   * FractalViewer must refresh.
+   */
+  const refreshViewerSignal = () => {
+    store.fractal.constant?.real;
+    store.fractal.constant?.imaginary;
+    store.fractal.variant;
+    store.fractal.maxIterations;
+  };
 
+  createEffect(() => {
+    refreshViewerSignal();
     fractalViewer?.destroy();
     if (ratio.isChanging()) return;
     mountFractalViewer();
   });
 
   createEffect(() => {
-    setFractalAspectRatio(ratio.debounced());
+    setViewerAspectRatio(ratio.debounced());
   });
 
   return (

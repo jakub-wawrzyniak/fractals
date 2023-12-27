@@ -7,12 +7,12 @@ import {
 } from "../shared";
 import { InputNumber } from "./InputNumber";
 
-export const SizePicker = () => {
+export const ExportSizePicker = () => {
   return (
     <div class="flex w-full gap-1 items-end">
       <InputNumber
         label="image width"
-        getNumber={() => store.exportWidth}
+        getNumber={() => store.export.width}
         setNumber={setExportWidth}
         class="flex-1"
       />

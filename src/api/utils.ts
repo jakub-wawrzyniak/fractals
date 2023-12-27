@@ -5,7 +5,7 @@ export const pixelsToImage = (pixels: number[], width: number): ImageData => {
     for (let y = 0; y < height; y++) {
       const lumaIndex = y * width + x;
       const rgbIndex = (y * width + x) * 4;
-      const luma = pixels[lumaIndex] * 0.9;
+      const luma = pixels[lumaIndex];
       image.data[rgbIndex + 0] = luma;
       image.data[rgbIndex + 1] = luma;
       image.data[rgbIndex + 2] = luma;

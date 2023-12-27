@@ -16,8 +16,8 @@ type FullJuliaImageRequest = JuliaImageRequest & {
 export const calcImage = async (req: JuliaImageRequest): Promise<ImageData> => {
   const request: FullJuliaImageRequest = {
     ...req,
-    fractal_variant: store.fractalVariant,
-    constant: store.fractalConstant ?? { imaginary: 0, real: 0 },
+    fractal_variant: store.fractal.variant,
+    constant: store.fractal.constant ?? { imaginary: 0, real: 0 },
   };
 
   const pixels = await invoke<number[]>("calc_image", { request });

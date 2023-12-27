@@ -6,7 +6,7 @@ import {
 } from "../shared";
 import { Arrow } from "../shared/icons";
 
-export const SelectFractal = () => {
+export const FractalSelectVariant = () => {
   return (
     <div class="dropdown dropdown-bottom w-full">
       <button class="btn btn-ghost w-full flex gap-2 justify-center items-center p-2 group relative font-normal">

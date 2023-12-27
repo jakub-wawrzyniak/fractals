@@ -6,13 +6,7 @@ const MAX_ITERATION: u32 = 1024;
 fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
     let abs = last_point.abs().log2().log2();
     let value: f64 = (iterations as f64) + 1.0 - abs;
-    (value * 12.0).floor().max(0.0).min(256.0) as u8
-}
-
-fn normalize_reverse(last_point: Complex<f64>, iterations: u32) -> u8 {
-    let abs = last_point.abs().log2().log2();
-    let value: f64 = abs - (iterations as f64) - 1.0 + 256.0;
-    (value * 12.0).floor().max(0.0).min(256.0) as u8
+    (value * 6.0).floor().max(0.0).min(256.0) as u8
 }
 
 pub fn mandelbrot(point: Complex<f64>, _: &Complex<f64>) -> u8 {

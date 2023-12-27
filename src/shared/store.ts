@@ -10,17 +10,21 @@ import { batch } from "solid-js";
 import { Complex, Point } from "./types";
 
 type AppStore = {
-  exportWidth: number;
-  userColor: string;
-  renderWithIterations: number;
-  fractalAspectRatio: number;
-  fractalVariant: Fractal;
-  fractalConstant: Complex | null;
-  exportFragment: boolean;
-  fractalFragmentSelection: {
-    isSelecting: boolean;
-    start: Point;
-    end: Point;
+  viewerAspectRatio: number;
+  fractal: {
+    color: string;
+    maxIterations: number;
+    constant: Complex | null;
+    variant: Fractal;
+  };
+  export: {
+    width: number;
+    source: "selection" | "screen";
+    selection: {
+      isSelecting: boolean;
+      start: Point;
+      end: Point;
+    };
   };
 };
 
@@ -32,22 +36,26 @@ const initConstant = (variant: Fractal) => {
 
 const initFractal = FRACTALS[0];
 const initStore: AppStore = {
-  userColor: "#ff0000",
-  exportWidth: 3000,
-  renderWithIterations: 1024,
-  fractalVariant: initFractal,
-  fractalConstant: initConstant(initFractal),
-  fractalAspectRatio: DEFAULT_ASPECT_RATIO,
-  exportFragment: false,
-  fractalFragmentSelection: {
-    isSelecting: false,
-    start: {
-      x: 0.25,
-      y: 0.25,
-    },
-    end: {
-      x: 0.75,
-      y: 0.75,
+  viewerAspectRatio: DEFAULT_ASPECT_RATIO, // this will be overwritten onMount
+  fractal: {
+    color: "#ff0000",
+    maxIterations: 1024,
+    variant: initFractal,
+    constant: initConstant(initFractal),
+  },
+  export: {
+    width: 3000,
+    source: "screen",
+    selection: {
+      isSelecting: false,
+      start: {
+        x: 0.25,
+        y: 0.25,
+      },
+      end: {
+        x: 0.75,
+        y: 0.75,
+      },
     },
   },
 };
@@ -61,10 +69,9 @@ type Bounds = {
   max: number;
 };
 
-export const fractalConfig = () => FRACTAL_CONFIG[store.fractalVariant];
+export const fractalConfig = () => FRACTAL_CONFIG[store.fractal.variant];
 export const imaginaryBounds = (): Bounds => {
-  const range =
-    fractalConfig().allowedRangeInComplex / store.fractalAspectRatio;
+  const range = fractalConfig().allowedRangeInComplex / store.viewerAspectRatio;
   return {
     range,
     min: -range / 2,
@@ -83,19 +90,19 @@ export const realBounds = (): Bounds => {
 
 export const setConstantImaginary = (value: number) => {
   const { min, max } = imaginaryBounds();
-  setStore("fractalConstant", "imaginary", clip(min, max, value));
+  setStore("fractal", "constant", "imaginary", clip(min, max, value));
 };
 
 export const setConstantReal = (value: number) => {
   const { min, max } = realBounds();
-  setStore("fractalConstant", "real", clip(min, max, value));
+  setStore("fractal", "constant", "real", clip(min, max, value));
 };
 
-export const setFractalAspectRatio = (value: number) => {
+export const setViewerAspectRatio = (ratio: number) => {
   batch(() => {
-    setStore("fractalAspectRatio", value);
-    if (store.fractalConstant !== null) {
-      setConstantImaginary(store.fractalConstant.imaginary);
+    setStore("viewerAspectRatio", ratio);
+    if (store.fractal.constant !== null) {
+      setConstantImaginary(store.fractal.constant.imaginary);
       // ^imaginary constant might go out of bounds on aspectRatio
       // change, must revalidate
     }
@@ -104,62 +111,59 @@ export const setFractalAspectRatio = (value: number) => {
 
 export const changeFractalVariant = (variant: Fractal) => {
   batch(() => {
-    setStore("fractalVariant", variant);
-    setStore("fractalConstant", initConstant(variant));
+    setStore("fractal", "variant", variant);
+    setStore("fractal", "constant", initConstant(variant));
   });
 };
 
 export const getConstantOrThrow = (where: string) => {
-  const { fractalConstant: constant, fractalVariant: variant } = store;
+  const { constant, variant } = store.fractal;
   if (constant === null)
     throw `${where}: attempt to access a null-value constant (${variant})`;
   return constant;
 };
 
-export const setFractalFragmentSelectionPoint = (
+export const setExportSelectionPoint = (
   name: "start" | "end",
   point: Point
 ) => {
-  setStore("fractalFragmentSelection", name, point);
+  setStore("export", "selection", name, point);
 };
 
-export const toggleIsSelectingFractalFragment = () => {
-  setStore(
-    "fractalFragmentSelection",
-    "isSelecting",
-    (selecting) => !selecting
-  );
+export const toggleIsSelecting = () => {
+  setStore("export", "selection", "isSelecting", (selecting) => !selecting);
 };
 
-export const setExportFragment = (value: boolean) => {
-  setStore("exportFragment", value);
+export const setExportSource = (value: AppStore["export"]["source"]) => {
+  setStore("export", "source", value);
 };
 
-export const setUserColor = (color: string) => {
-  setStore("userColor", color);
+export const setFractalColor = (color: string) => {
+  setStore("fractal", "color", color);
 };
 
-export const setIterations = (value: number) => {
-  setStore("renderWithIterations", value);
+export const setMaxIterations = (value: number) => {
+  setStore("fractal", "maxIterations", value);
 };
 
-export const pickedAspectRatio = () => {
-  if (!store.exportFragment) return store.fractalAspectRatio;
+export const exportAspectRatio = () => {
+  const exportScreen = store.export.source === "screen";
+  if (exportScreen) return store.viewerAspectRatio;
   const { abs } = Math;
-  const { end, start } = store.fractalFragmentSelection;
+  const { end, start } = store.export.selection;
   const width = abs(end.x - start.x);
-  const height = abs(end.y - start.y);
+  const height = abs(end.y - start.y) / store.viewerAspectRatio;
   return width / height;
 };
 
 export const exportHeight = () => {
-  return Math.floor(store.exportWidth / pickedAspectRatio());
+  return Math.floor(store.export.width / exportAspectRatio());
 };
 
 export const setExportHeight = (height: number) => {
-  setStore("exportWidth", Math.floor(height * pickedAspectRatio()));
+  setStore("export", "width", Math.floor(height * exportAspectRatio()));
 };
 
 export const setExportWidth = (width: number) => {
-  setStore("exportWidth", width);
+  setStore("export", "width", width);
 };

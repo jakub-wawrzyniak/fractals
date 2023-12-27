@@ -2,8 +2,8 @@ import { Show } from "solid-js";
 import {
   Point,
   store,
-  setFractalFragmentSelectionPoint as setSelection,
-  toggleIsSelectingFractalFragment as toggleIsSelecting,
+  setExportSelectionPoint as setSelection,
+  toggleIsSelecting as toggleIsSelecting,
 } from "../shared";
 
 type Event = MouseEvent & {
@@ -12,7 +12,7 @@ type Event = MouseEvent & {
 };
 
 export const SelectFractalPart = () => {
-  const selection = () => store.fractalFragmentSelection;
+  const selection = () => store.export.selection;
   const getMousePosition = (e: Event): Point => {
     const { width, height } = e.target.getBoundingClientRect();
     return {
@@ -37,7 +37,7 @@ export const SelectFractalPart = () => {
   };
 
   return (
-    <Show when={store.exportFragment}>
+    <Show when={store.export.source === "selection"}>
       <div class="w-full h-full absolute top-0 left-0 z-20">
         <svg
           class="w-full h-full"

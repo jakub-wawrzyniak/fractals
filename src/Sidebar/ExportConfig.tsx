@@ -1,14 +1,14 @@
-import { store, setExportFragment, HasChild } from "../shared";
-import { SizePicker } from "./SizePicker";
+import { store, setExportSource, HasChild } from "../shared";
+import { ExportSizePicker } from "./ExportSizePicker";
 
-type ExportFragment = HasChild & { exportFragment: boolean };
-const ButtonExportSource = (props: ExportFragment) => {
+type ExportSource = HasChild & { exportFrom: "screen" | "selection" };
+const ButtonExportSource = (props: ExportSource) => {
   return (
     <button
       class="btn btn-primary flex-1"
-      onClick={() => setExportFragment(props.exportFragment)}
+      onClick={() => setExportSource(props.exportFrom)}
       classList={{
-        "btn-outline": props.exportFragment !== store.exportFragment,
+        "btn-outline": props.exportFrom !== store.export.source,
       }}
     >
       {props.children}
@@ -16,7 +16,7 @@ const ButtonExportSource = (props: ExportFragment) => {
   );
 };
 
-export const SidebarExportConfig = () => {
+export const ExportConfig = () => {
   return (
     <form
       class="grow flex flex-col gap-3 justify-end pb-2"
@@ -25,13 +25,13 @@ export const SidebarExportConfig = () => {
       <h4 class="font-poppins font-regular text-xl text-center">
         Export your fractal
       </h4>
-      <SizePicker />
+      <ExportSizePicker />
       <div class="flex gap-1 items-center">
-        <ButtonExportSource exportFragment={false}>
+        <ButtonExportSource exportFrom="screen">
           the whole screen
         </ButtonExportSource>
         <span class="w-5 text-center text-sm opacity-80">or</span>
-        <ButtonExportSource exportFragment={true}>
+        <ButtonExportSource exportFrom="selection">
           custom fragment
         </ButtonExportSource>
       </div>
