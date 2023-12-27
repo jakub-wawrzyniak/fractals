@@ -95,10 +95,8 @@ const createTileSource = (): OpenSeadragon.TileSource => {
   return tileSource as unknown as OpenSeadragon.TileSource;
 };
 
-type Viewer = OpenSeadragon.Viewer | null;
-export let fractalViewer: Viewer = null;
 export const mountFractal = () => {
-  fractalViewer = OpenSeadragon({
+  return OpenSeadragon({
     ...VIEWER_OPTIONS,
     tileSources: [createTileSource()],
   });

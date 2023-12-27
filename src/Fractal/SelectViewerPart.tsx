@@ -1,47 +1,35 @@
-import OpenSeadragon from "openseadragon";
-import { createEffect } from "solid-js";
-import { store } from "../shared";
-import { fractalViewer } from "./viewer";
+import { Show, createSignal } from "solid-js";
+import { Size, Point, store } from "../shared";
 
-type Props = {
-  viewerMounted: () => boolean;
-};
-
-/** This component doesn't render directly, but via OpenSeadragon.
- * But it still renders UI, to it is a component (i think)
- */
-export const SelectFractalPart = (props: Props) => {
-  const overlayClasses =
-    "w-full h-full bg-white opacity-5 pointer-events-none bg-blend-screen";
-  const onDrag = (event: OpenSeadragon.CanvasDragEvent) => {
-    console.log(event.position);
-  };
-
-  let selection = new OpenSeadragon.Rect(0, 0, 0, 0);
-  createEffect((cleanup) => {
-    const isSelecting = store.fractalFragmentSelection.isSelecting;
-    if (!props.viewerMounted() || !isSelecting) {
-      if (fractalViewer === null) return;
-      if (typeof cleanup === "function") cleanup();
-      return;
-    }
-
-    if (fractalViewer === null) throw "Fractal should be mounted, but isn't";
-
-    fractalViewer.setMouseNavEnabled(false);
-    fractalViewer.addOverlay(
-      overlayClasses,
-      selection,
-      OpenSeadragon.Placement.TOP_LEFT
-    );
-    fractalViewer.addHandler("canvas-drag", onDrag);
-    return () => {
-      if (fractalViewer === null) return;
-      fractalViewer.setMouseNavEnabled(true);
-      fractalViewer.removeOverlay(overlayClasses);
-      fractalViewer.removeHandler("canvas-drag", onDrag);
-    };
+export const SelectFractalPart = () => {
+  const [rect, setRect] = createSignal({
+    right: 0.25,
+    bottom: 0.25,
+    left: 0.25,
+    top: 0.25,
   });
 
-  return <></>;
+  const percent = (betweenZeroAndOne: number) => {
+    return `${betweenZeroAndOne * 100}%`;
+  };
+
+  const clipPath = () => {
+    const { left, top, right, bottom } = rect();
+    const setup = [top, right, bottom, left].map(percent).join(" ");
+    return `inset(${setup})`;
+  };
+
+  console.log(clipPath());
+  return (
+    <Show when={store.fractalFragmentSelection.isSelecting}>
+      <div class="w-full h-full absolute top-0 left-0 z-20">
+        <div
+          class="w-full h-full bg-white opacity-20 pointer-events-none bg-blend-screen"
+          style={{
+            "clip-path": clipPath(),
+          }}
+        ></div>
+      </div>
+    </Show>
+  );
 };
