@@ -1,32 +1,24 @@
-import { Setter, Show, createEffect, createSignal } from "solid-js";
-import { Point, store } from "../shared";
+import { Show } from "solid-js";
+import {
+  Point,
+  setFractalFragmentSelectionPoint as setSelection,
+  store,
+  toggleIsSelectingFractalFragment as toggleIsSelecting,
+} from "../shared";
 
 type Event = MouseEvent & {
   currentTarget: HTMLDivElement;
   target: Element;
 };
-const initStart: Point = {
-  x: 0.25,
-  y: 0.25,
-};
-const initEnd: Point = {
-  x: 0.75,
-  y: 0.75,
-};
 
 export const SelectFractalPart = () => {
-  const [isSelecting, setIsSelecting] = createSignal(false);
-  const [selectionStart, setSelectionStart] = createSignal(initStart);
-  const [selectionEnd, setSelectionEnd] = createSignal(initEnd);
-
-  const setMousePosition = (update: Setter<Point>, e: Event) => {
+  const selection = () => store.fractalFragmentSelection;
+  const getMousePosition = (e: Event): Point => {
     const { width, height } = e.target.getBoundingClientRect();
-    console.log(e);
-
-    update({
+    return {
       x: e.x / width,
       y: e.y / height,
-    });
+    };
   };
 
   const percent = (betweenZeroAndOne: number) => {
@@ -34,8 +26,7 @@ export const SelectFractalPart = () => {
   };
 
   const selectionArea = () => {
-    const start = selectionStart();
-    const end = selectionEnd();
+    const { start, end } = selection();
     const { abs, min } = Math;
     return {
       x: percent(min(start.x, end.x)),
@@ -44,11 +35,6 @@ export const SelectFractalPart = () => {
       height: percent(abs(end.y - start.y)),
     };
   };
-
-  createEffect(() => {
-    if (isSelecting()) console.log("start");
-    else console.log("end");
-  });
 
   return (
     <Show when={store.fractalFragmentSelection.canSelect}>
@@ -76,16 +62,13 @@ export const SelectFractalPart = () => {
         <div
           class="w-full h-full absolute top-0 left-0 cursor-crosshair"
           onClick={(e) => {
-            if (isSelecting()) {
-              setIsSelecting(false);
-            } else {
-              setMousePosition(setSelectionStart, e);
-              setIsSelecting(true);
-            }
+            if (!selection().isSelecting)
+              setSelection("start", getMousePosition(e));
+            toggleIsSelecting();
           }}
           onMouseMove={
-            isSelecting()
-              ? (e) => setMousePosition(setSelectionEnd, e)
+            selection().isSelecting
+              ? (e) => setSelection("end", getMousePosition(e))
               : undefined
           }
         />

@@ -13,10 +13,12 @@ type AppStore = {
   fractalAspectRatio: number;
   fractalVariant: Fractal;
   fractalConstant: Complex | null;
-  fractalFragmentSelection: Size &
-    Point & {
-      canSelect: boolean;
-    };
+  fractalFragmentSelection: {
+    canSelect: boolean;
+    isSelecting: boolean;
+    start: Point;
+    end: Point;
+  };
 };
 
 const initConstant = (variant: Fractal) => {
@@ -32,10 +34,15 @@ const initStore: AppStore = {
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
   fractalFragmentSelection: {
     canSelect: true,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
+    isSelecting: false,
+    start: {
+      x: 0.25,
+      y: 0.25,
+    },
+    end: {
+      x: 0.75,
+      y: 0.75,
+    },
   },
 };
 
@@ -101,4 +108,19 @@ export const getConstantOrThrow = (where: string) => {
   if (constant === null)
     throw `${where}: attempt to access a null-value constant (${variant})`;
   return constant;
+};
+
+export const setFractalFragmentSelectionPoint = (
+  name: "start" | "end",
+  point: Point
+) => {
+  setStore("fractalFragmentSelection", name, point);
+};
+
+export const toggleIsSelectingFractalFragment = () => {
+  setStore(
+    "fractalFragmentSelection",
+    "isSelecting",
+    (selecting) => !selecting
+  );
 };
