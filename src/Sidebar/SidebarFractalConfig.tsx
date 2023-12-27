@@ -5,11 +5,14 @@ import {
   realBounds,
   setConstantImaginary,
   setConstantReal,
+  setIterations,
   store,
 } from "../shared";
 import { FractalEquation } from "./FractalEquation";
-import { InputNumber } from "./InputNumber";
+import { InputRange } from "./InputRange";
 import { SelectFractal } from "./SelectFractal";
+import { ColorPicker } from "./ColorPicker";
+import { InputNumber } from "./InputNumber";
 
 export const SidebarFractalConfig = () => {
   const getOrThrow = (key: "real" | "imaginary") => () => {
@@ -23,7 +26,7 @@ export const SidebarFractalConfig = () => {
       <SelectFractal />
       <FractalEquation />
       <Show when={fractalConfig().initConstant !== null}>
-        <InputNumber
+        <InputRange
           getNumber={getOrThrow("real")}
           setNumber={setConstantReal}
           max={realBounds().max}
@@ -31,16 +34,25 @@ export const SidebarFractalConfig = () => {
           label="C: real component"
           class="range-primary"
         />
-        <InputNumber
+        <InputRange
           getNumber={getOrThrow("imaginary")}
           setNumber={setConstantImaginary}
           max={imaginaryBounds().max}
           min={imaginaryBounds().min}
           label="C: imaginary component"
-          class="range-secondary"
+          class="range-primary"
           unit="i"
         />
       </Show>
+      <div class="flex gap-1 items-end">
+        <InputNumber
+          getNumber={() => store.renderWithIterations}
+          setNumber={(count) => setIterations(count)}
+          label="How large is Infinity?"
+          class="range-primary"
+        />
+        <ColorPicker />
+      </div>
     </>
   );
 };

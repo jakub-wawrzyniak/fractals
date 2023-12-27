@@ -1,5 +1,9 @@
 import { Show } from "solid-js";
-import { Equasion, fractalConfig, getConstantOrThrow } from "../shared";
+import { HasChild, fractalConfig, getConstantOrThrow } from "../shared";
+
+const Equasion = (props: HasChild) => {
+  return <p class="font-mono text-center text-lg">{props.children}</p>;
+};
 
 export const FractalEquation = () => {
   const constant = () => getConstantOrThrow("FractalEquation");
@@ -23,7 +27,7 @@ export const FractalEquation = () => {
         <Equasion>
           C = <span class="text-primary font-bold">{constantReal()}</span>
           {constantSign()}
-          <span class="text-secondary font-bold">{constantImaginary()}</span>
+          <span class="text-primary font-bold">{constantImaginary()}</span>
         </Equasion>
       </Show>
     </div>

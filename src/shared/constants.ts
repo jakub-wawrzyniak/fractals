@@ -33,8 +33,8 @@ export const FRACTAL_CONFIG = {
     allowedRangeInComplex: 4,
     offsetGraphInComplex: noOffset,
     initConstant: {
-      real: 0.313,
-      imaginary: -0.5,
+      real: 0.304,
+      imaginary: -0.436,
     },
   },
   BurningShip: {

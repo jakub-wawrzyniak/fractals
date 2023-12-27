@@ -4,6 +4,7 @@ import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
 import { setFractalAspectRatio, store } from "../shared";
 import { SelectFractalPart } from "./SelectFractalPart.jsx";
+import { ColorOverlay } from "./ColorOverlay.jsx";
 
 export const Fractal = () => {
   const ratio = useAspectRatio(VIEWER_OPTIONS.id);
@@ -29,6 +30,7 @@ export const Fractal = () => {
         {/* idk why the h-0 is needed, but without it the viewer just
       won't show up (despite having space for it) :c */}
       </div>
+      <ColorOverlay />
       <SelectFractalPart />
       <Show when={ratio.isChanging()}>
         <div class="w-full h-full grid place-content-center absolute top-0 left-0 z-30">

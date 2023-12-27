@@ -10,6 +10,9 @@ import { batch } from "solid-js";
 import { Complex, Point } from "./types";
 
 type AppStore = {
+  exportWidth: number;
+  userColor: string;
+  renderWithIterations: number;
   fractalAspectRatio: number;
   fractalVariant: Fractal;
   fractalConstant: Complex | null;
@@ -29,6 +32,9 @@ const initConstant = (variant: Fractal) => {
 
 const initFractal = FRACTALS[0];
 const initStore: AppStore = {
+  userColor: "#ff0000",
+  exportWidth: 3000,
+  renderWithIterations: 1024,
   fractalVariant: initFractal,
   fractalConstant: initConstant(initFractal),
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
@@ -127,4 +133,33 @@ export const toggleIsSelectingFractalFragment = () => {
 
 export const setExportFragment = (value: boolean) => {
   setStore("exportFragment", value);
+};
+
+export const setUserColor = (color: string) => {
+  setStore("userColor", color);
+};
+
+export const setIterations = (value: number) => {
+  setStore("renderWithIterations", value);
+};
+
+export const pickedAspectRatio = () => {
+  if (!store.exportFragment) return store.fractalAspectRatio;
+  const { abs } = Math;
+  const { end, start } = store.fractalFragmentSelection;
+  const width = abs(end.x - start.x);
+  const height = abs(end.y - start.y);
+  return width / height;
+};
+
+export const exportHeight = () => {
+  return Math.floor(store.exportWidth / pickedAspectRatio());
+};
+
+export const setExportHeight = (height: number) => {
+  setStore("exportWidth", Math.floor(height * pickedAspectRatio()));
+};
+
+export const setExportWidth = (width: number) => {
+  setStore("exportWidth", width);
 };

@@ -1,41 +1,23 @@
-import { Number } from "../shared";
+import { HasClass } from "../shared";
 
-type InputNumberProps = {
+type InputNumberProps = HasClass & {
+  label: string;
   getNumber: () => number;
   setNumber: (value: number) => void;
-  label: string;
-  min: number;
-  max: number;
-  unit?: string;
-  class?: string;
 };
 
 export const InputNumber = (props: InputNumberProps) => {
   return (
-    <label class="form-control w-full">
-      <div class="label">
-        <span class="label-text">{props.label}</span>
+    <label class={`form-control ${props.class ?? ""}`}>
+      <div class="label py-1">
+        <span class="label-text-alt text-center w-full">{props.label}</span>
       </div>
       <input
-        type="range"
-        class={`range range-xs ${props.class ?? ""}`}
-        max={props.max}
-        min={props.min}
-        step={0.001}
+        type="number"
         value={props.getNumber()}
-        onInput={(e) => props.setNumber(parseFloat(e.target.value))}
+        onInput={(e) => props.setNumber(parseInt(e.target.value))}
+        class="input input-bordered border-base-content w-full max-w-xs no-spinner text-center"
       />
-      <div class="w-full flex justify-between text-s mt-1">
-        <Number>
-          {props.min.toFixed(2)}
-          {props.unit ?? ""}
-        </Number>
-        <Number>0</Number>
-        <Number>
-          {props.max.toFixed(2)}
-          {props.unit ?? ""}
-        </Number>
-      </div>
     </label>
   );
 };

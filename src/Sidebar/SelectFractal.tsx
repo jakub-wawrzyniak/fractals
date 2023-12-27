@@ -1,7 +1,6 @@
 import {
   FRACTAL_CONFIG,
   FRACTALS,
-  Header,
   changeFractalVariant,
   fractalConfig,
 } from "../shared";
@@ -11,7 +10,9 @@ export const SelectFractal = () => {
   return (
     <div class="dropdown dropdown-bottom w-full">
       <button class="btn btn-ghost w-full flex gap-2 justify-center items-center p-2 group relative font-normal">
-        <Header>{fractalConfig().name}</Header>
+        <h3 class="font-poppins font-regular text-center text-2xl">
+          {fractalConfig().name}
+        </h3>
         <Arrow class="absolute right-2 top-1/2 -translate-y-1/2 transition-transform group-focus:rotate-180" />
       </button>
       <ul
