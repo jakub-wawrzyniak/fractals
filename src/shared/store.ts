@@ -7,12 +7,16 @@ import {
 import { createStore } from "solid-js/store";
 import { clip } from "./utils";
 import { batch } from "solid-js";
-import { Complex } from ".";
+import { Complex, Size, Point } from "./types";
 
 type AppStore = {
   fractalAspectRatio: number;
   fractalVariant: Fractal;
   fractalConstant: Complex | null;
+  fractalFragmentSelection: Size &
+    Point & {
+      isSelecting: boolean;
+    };
 };
 
 const initConstant = (variant: Fractal) => {
@@ -26,6 +30,13 @@ const initStore: AppStore = {
   fractalVariant: initFractal,
   fractalConstant: initConstant(initFractal),
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
+  fractalFragmentSelection: {
+    isSelecting: true,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  },
 };
 
 const [store, setStore] = createStore(initStore);
@@ -58,19 +69,16 @@ export const realBounds = (): Bounds => {
 };
 
 export const setConstantImaginary = (value: number) => {
-  console.log("imag");
   const { min, max } = imaginaryBounds();
   setStore("fractalConstant", "imaginary", clip(min, max, value));
 };
 
 export const setConstantReal = (value: number) => {
-  console.log("real");
   const { min, max } = realBounds();
   setStore("fractalConstant", "real", clip(min, max, value));
 };
 
 export const setFractalAspectRatio = (value: number) => {
-  console.log("aspect");
   batch(() => {
     setStore("fractalAspectRatio", value);
     if (store.fractalConstant !== null) {
@@ -82,7 +90,6 @@ export const setFractalAspectRatio = (value: number) => {
 };
 
 export const changeFractalVariant = (variant: Fractal) => {
-  console.log("variant");
   batch(() => {
     setStore("fractalVariant", variant);
     setStore("fractalConstant", initConstant(variant));

@@ -1,22 +1,25 @@
-import { Show, createEffect } from "solid-js";
-import { mountFractal } from "./viewer.js";
+import { Show, createEffect, createSignal } from "solid-js";
+import { fractalViewer, mountFractal } from "./viewer.js";
 import { useAspectRatio } from "./hooks.js";
 import { VIEWER_OPTIONS } from "./config.js";
 import { setFractalAspectRatio, store } from "../shared";
-import OpenSeadragon from "openseadragon";
+import { SelectFractalPart } from "./SelectViewerPart.jsx";
 
 export const Fractal = () => {
   const ratio = useAspectRatio(VIEWER_OPTIONS.id);
+  const [viewerMounted, setViewerMouted] = createSignal(false);
 
-  let viewer: OpenSeadragon.Viewer;
   createEffect(() => {
     store.fractalConstant?.real;
     store.fractalConstant?.imaginary;
     store.fractalVariant;
     // track those^ values
-    viewer?.destroy();
+    setViewerMouted(false);
+    fractalViewer?.destroy();
     if (ratio.isChanging()) return;
-    viewer = mountFractal();
+
+    mountFractal();
+    setViewerMouted(true);
   });
 
   createEffect(() => {
@@ -29,6 +32,7 @@ export const Fractal = () => {
         {/* idk why the h-0 is needed, but without it the viewer just
       won't show up (despite having space for it) :c */}
       </div>
+      <SelectFractalPart viewerMounted={viewerMounted} />
       <Show when={ratio.isChanging()}>
         <div class="w-full h-full grid place-content-center absolute top-0 left-0 z-20">
           <span class="loading loading-spinner loading-lg" />
