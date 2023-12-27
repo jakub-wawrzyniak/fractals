@@ -5,7 +5,7 @@ import {
   changeFractalVariant,
   fractalConfig,
 } from "../shared";
-import { Arrow } from "./Arrow";
+import { Arrow } from "../shared/icons";
 
 export const SelectFractal = () => {
   return (

@@ -32,3 +32,15 @@ p,span,input,label {
 	font-family: 'Poppins';
 	font-weight: 500;
 }
+
+@layer components {
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+}

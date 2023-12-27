@@ -1,8 +1,8 @@
 import { Show } from "solid-js";
 import {
   Point,
-  setFractalFragmentSelectionPoint as setSelection,
   store,
+  setFractalFragmentSelectionPoint as setSelection,
   toggleIsSelectingFractalFragment as toggleIsSelecting,
 } from "../shared";
 
@@ -37,7 +37,7 @@ export const SelectFractalPart = () => {
   };
 
   return (
-    <Show when={store.fractalFragmentSelection.canSelect}>
+    <Show when={store.exportFragment}>
       <div class="w-full h-full absolute top-0 left-0 z-20">
         <svg
           class="w-full h-full"

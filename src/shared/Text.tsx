@@ -8,6 +8,10 @@ export const Header = (props: HasChild) => {
   );
 };
 
+export const Subheader = (props: HasChild) => {
+  return <h4 class="font-poppins font-regular text-xl">{props.children}</h4>;
+};
+
 export const Equasion = (props: HasChild) => {
   return <p class="font-mono text-center text-lg">{props.children}</p>;
 };

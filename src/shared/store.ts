@@ -7,14 +7,14 @@ import {
 import { createStore } from "solid-js/store";
 import { clip } from "./utils";
 import { batch } from "solid-js";
-import { Complex, Size, Point } from "./types";
+import { Complex, Point } from "./types";
 
 type AppStore = {
   fractalAspectRatio: number;
   fractalVariant: Fractal;
   fractalConstant: Complex | null;
+  exportFragment: boolean;
   fractalFragmentSelection: {
-    canSelect: boolean;
     isSelecting: boolean;
     start: Point;
     end: Point;
@@ -32,8 +32,8 @@ const initStore: AppStore = {
   fractalVariant: initFractal,
   fractalConstant: initConstant(initFractal),
   fractalAspectRatio: DEFAULT_ASPECT_RATIO,
+  exportFragment: false,
   fractalFragmentSelection: {
-    canSelect: true,
     isSelecting: false,
     start: {
       x: 0.25,
@@ -123,4 +123,8 @@ export const toggleIsSelectingFractalFragment = () => {
     "isSelecting",
     (selecting) => !selecting
   );
+};
+
+export const setExportFragment = (value: boolean) => {
+  setStore("exportFragment", value);
 };
