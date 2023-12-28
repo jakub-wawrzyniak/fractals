@@ -5,11 +5,12 @@ mod api;
 pub mod fractal;
 pub mod renderer;
 use api::FractalRequestLuma;
-use renderer::FractalImage;
+use renderer::{take_and_flip, FractalImage};
 
 #[tauri::command]
 async fn calc_image(request: FractalRequestLuma) -> Vec<u8> {
-    FractalImage::from(request).render().into_raw()
+    let image = FractalImage::from(request).render_on_threads();
+    take_and_flip(image)
 }
 
 fn main() {

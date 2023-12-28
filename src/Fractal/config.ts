@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
-import { JuliaImageRequest } from "../api";
 import { Size } from "../shared";
+import { CalcImageRequest } from "../api";
 
 export const VIEWER_OPTIONS = {
   id: "fractal",
@@ -17,14 +17,14 @@ export const VIEWER_OPTIONS = {
   showNavigator: false,
 } as const satisfies OpenSeadragon.Options;
 
-export type TileRequest = {
+export type OsdTileRequest = {
   level: number;
   x: number;
   y: number;
 };
 
 export type DownloadContext = {
-  postData: TileRequest;
+  postData: OsdTileRequest;
   finish(ctx: CanvasRenderingContext2D): void;
 };
 
@@ -34,11 +34,11 @@ type TileCache = {
 
 export type OpenSeadragonTileSourcePrototype =
   OpenSeadragon.TileSourceOptions & {
-    getTilePostData(level: number, x: number, y: number): TileRequest;
+    getTilePostData(level: number, x: number, y: number): OsdTileRequest;
     getRequestedTileSize(context: DownloadContext): Size;
     getTileBoundsInComplex(
       context: DownloadContext
-    ): Omit<JuliaImageRequest, "width_px">;
+    ): Omit<CalcImageRequest, "width_px">;
     downloadTileStart(context: DownloadContext): void;
     // TODO: downloadTileAbort(context: DownloadContext): void;
     createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;

@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { viewerDimensions, pointToComplex } from "./utils";
-import { JuliaImageRequest, calcImage } from "../api";
+import { CalcImageRequest, calcImage } from "../api";
 import { OpenSeadragonTileSourcePrototype, VIEWER_OPTIONS } from "./config";
 
 const createTileSource = (): OpenSeadragon.TileSource => {
@@ -55,7 +55,7 @@ const createTileSource = (): OpenSeadragon.TileSource => {
     downloadTileStart: async function (context) {
       const tileSize = this.getRequestedTileSize(context);
       const tileBounds = this.getTileBoundsInComplex(context);
-      const request: JuliaImageRequest = {
+      const request: CalcImageRequest = {
         width_px: tileSize.width,
         ...tileBounds,
       };

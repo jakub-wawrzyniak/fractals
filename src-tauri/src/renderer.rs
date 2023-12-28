@@ -44,6 +44,10 @@ where
         }
     }
 
+    fn with_height(self, height_px: u32) -> Self {
+        Self { height_px, ..self }
+    }
+
     pub fn render(&self) -> ImageBuffer<Px> {
         let mut image = ImageBuffer::<Px>::new(self.width_px as u32, self.height_px as u32);
         let mut real = self.top_left_bound.re;
@@ -61,7 +65,7 @@ where
     }
 
     fn split_work(&self, chunks: u32) -> Vec<FractalImage<Px>> {
-        let chunk_height = (self.height_px / chunks) + chunks;
+        let chunk_height = self.height_px / chunks;
         let chunk_bottom_im = |chunk_id: u32| {
             let id = chunk_id as f64;
             let height = chunk_height as f64;
@@ -77,21 +81,31 @@ where
         }
 
         for id in 0..=(chunks - 2) {
-            jobs.push(FractalImage::new(
-                self.config.clone(),
-                Complex64::new(self.top_left_bound.re, chunk_bottom_im(id + 1)),
-                Complex64::new(self.bottom_right_bound.re, chunk_bottom_im(id)),
-                self.width_px,
-            ));
+            jobs.push(
+                FractalImage::new(
+                    self.config.clone(),
+                    Complex64::new(self.top_left_bound.re, chunk_bottom_im(id + 1)),
+                    Complex64::new(self.bottom_right_bound.re, chunk_bottom_im(id)),
+                    self.width_px,
+                )
+                .with_height(chunk_height),
+            );
         }
 
-        jobs.push(FractalImage::new(
-            self.config.clone(),
-            self.top_left_bound,
-            Complex64::new(self.bottom_right_bound.re, chunk_bottom_im(chunks - 1)),
-            self.width_px,
-        ));
+        jobs.push(
+            FractalImage::new(
+                self.config.clone(),
+                self.top_left_bound,
+                Complex64::new(self.bottom_right_bound.re, chunk_bottom_im(chunks - 1)),
+                self.width_px,
+            )
+            .with_height(chunk_height + self.height_px % chunks),
+        );
 
+        let computed_height_px: u32 = jobs.iter().map(|j| j.height_px).sum();
+        if computed_height_px != self.height_px {
+            panic!("Slow down, cowboy");
+        }
         return jobs;
     }
 
@@ -107,7 +121,7 @@ where
         for handle in handles {
             pixels.append(&mut handle.join().unwrap())
         }
-
+        let expected = self.width_px * self.height_px;
         ImageBuffer::from_raw(self.width_px, self.height_px, pixels).unwrap()
     }
 
@@ -120,6 +134,18 @@ where
         }
         self.delegate_and_run(chunks.max(4) as u32)
     }
+}
+
+pub fn take_and_flip<Px: image::Pixel<Subpixel = u8>>(buffer: ImageBuffer<Px>) -> Vec<u8> {
+    let width = buffer.width() as usize;
+    buffer
+        .into_raw()
+        .chunks(width)
+        .into_iter()
+        .rev()
+        .flatten()
+        .map(|e| *e)
+        .collect()
 }
 
 #[cfg(test)]
@@ -212,7 +238,7 @@ mod tests {
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
-    fn rendered_mandelbrot_grau() {
+    fn rendered_mandelbrot_gray() {
         mandelbrot(config_grayscale).render();
     }
 
@@ -286,7 +312,14 @@ mod tests {
     }
 
     #[test]
-    fn render_threaded_saves() {
+    fn render_threaded_grayscale_saves() {
+        mandelbrot(config_grayscale)
+            .render_on_threads()
+            .save("./threads.png".to_owned())
+            .unwrap();
+    }
+    #[test]
+    fn render_threaded_colors_saves() {
         mandelbrot(config_color)
             .render_on_threads()
             .save("./threads.png".to_owned())
