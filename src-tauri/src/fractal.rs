@@ -1,56 +1,86 @@
-use num::{complex::ComplexFloat, Complex};
-pub type GetLumaForPoint = fn(Complex<f64>, &Complex<f64>) -> u8;
+use num::complex::{Complex64, ComplexFloat};
+pub type CreatePixel<T> = fn(Complex64, &FractalConfig<T>) -> T;
+pub type CreatePixelLuma = fn(Complex64, &FractalConfig<u8>) -> u8;
 
-const MAX_ITERATION: u32 = 1024;
+#[derive(Clone)]
+pub struct FractalConfig<Pixel> {
+    pub create_pixel: fn(Complex64, &FractalConfig<Pixel>) -> Pixel,
+    divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
+    max_iterations: u32,
+    color_hex: String,
+    constant: Complex64,
+}
 
-fn normalize_divergence(last_point: Complex<f64>, iterations: u32) -> u8 {
+impl<Pixel> FractalConfig<Pixel> {
+    pub fn new(
+        max_iterations: u32,
+        constant: Complex64,
+        color_hex: String,
+        divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
+        create_pixel: fn(Complex64, &FractalConfig<Pixel>) -> Pixel,
+    ) -> Self {
+        Self {
+            create_pixel,
+            divergence_to_pixel,
+            max_iterations,
+            color_hex,
+            constant,
+        }
+    }
+}
+
+pub fn divergence_to_luma(last_point: Complex64, iterations: u32, _: &FractalConfig<u8>) -> u8 {
     let abs = last_point.abs().log2().log2();
     let value: f64 = (iterations as f64) + 1.0 - abs;
     (value * 6.0).floor().max(0.0).min(256.0) as u8
 }
 
-pub fn mandelbrot(point: Complex<f64>, _: &Complex<f64>) -> u8 {
-    const ESCAPE_RADIUS: f64 = 3.0;
+fn in_bounds(point: &Complex64, radius: f64) -> bool {
+    let distance = point.re * point.re + point.im * point.im;
+    return distance < radius;
+}
+
+pub fn mandelbrot<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
     let mut iteration = 0;
-    let mut current = Complex::new(0.0, 0.0);
-    while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
+    let mut current = Complex64::new(0.0, 0.0);
+    while iteration < config.max_iterations && in_bounds(&current, 9.0) {
         current = current.powi(2) + point;
         iteration += 1;
     }
-    normalize_divergence(current, iteration)
+    (config.divergence_to_pixel)(current, iteration, config)
 }
 
-pub fn julia_set(point: Complex<f64>, constant: &Complex<f64>) -> u8 {
+pub fn julia_set<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
     const ESCAPE_RADIUS: f64 = 2.0;
     let mut iteration = 0;
     let mut current = point;
-    while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
-        current = current.powi(2) + constant;
+    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
+        current = current.powi(2) + config.constant;
         iteration += 1;
     }
-    normalize_divergence(current, iteration)
+    (config.divergence_to_pixel)(current, iteration, config)
 }
 
-pub fn burning_ship(point: Complex<f64>, _: &Complex<f64>) -> u8 {
+pub fn burning_ship<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
     const ESCAPE_RADIUS: f64 = 3.0;
     let mut iteration = 0;
-    let mut current = Complex::new(0.0, 0.0);
-    while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
-        current = Complex::new(current.re.abs(), current.im.abs()).powi(2) + point;
+    let mut current = Complex64::new(0.0, 0.0);
+    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
+        current = Complex64::new(current.re.abs(), current.im.abs()).powi(2) + point;
         iteration += 1;
     }
-    normalize_divergence(current, iteration)
+    (config.divergence_to_pixel)(current, iteration, config)
 }
 
-pub fn newton(point: Complex<f64>, _: &Complex<f64>) -> u8 {
+pub fn newton<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
     const ESCAPE_RADIUS: f64 = 2.0;
     let mut iteration = 0;
     let mut current = point;
-    while iteration < MAX_ITERATION && current.norm() < ESCAPE_RADIUS {
+    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
         let nominator = current.powi(3) * 2.0 + 1.0;
         let denominator = current.powi(2) * 3.0;
         current = nominator / denominator;
         iteration += 1;
     }
-    normalize_divergence(current, iteration)
+    (config.divergence_to_pixel)(current, iteration, config)
 }

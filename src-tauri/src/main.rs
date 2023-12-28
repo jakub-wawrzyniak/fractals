@@ -4,12 +4,12 @@
 mod api;
 pub mod fractal;
 pub mod renderer;
-use api::FractalRequest;
+use api::FractalRequestLuma;
 use renderer::FractalImage;
 
 #[tauri::command]
-async fn calc_image(request: FractalRequest) -> Vec<u8> {
-    FractalImage::from(request).render().take_ui_pixels()
+async fn calc_image(request: FractalRequestLuma) -> Vec<u8> {
+    FractalImage::from(request).render().take_pixels()
 }
 
 fn main() {
