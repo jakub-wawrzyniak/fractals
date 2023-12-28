@@ -1,5 +1,5 @@
 use crate::{
-    fractal::{self, CreatePixel, FractalConfig},
+    fractal::{self, clip_u8, ColorLUT, CreatePixel, FractalConfig, Luma, Rgb},
     renderer::FractalImage,
 };
 use num::complex::Complex64;
@@ -46,31 +46,102 @@ impl<T> Into<CreatePixel<T>> for FractalVariant {
     }
 }
 
-impl From<FractalRequestLuma> for FractalConfig<u8> {
+fn blend_overlay(bottom: u8, top: u8) -> u8 {
+    // let (top, bottom) = (bottom, top);
+    let bottom = bottom as f64 / 256.0;
+    let top = top as f64 / 256.0;
+    let blended = if bottom < 0.5 {
+        2.0 * bottom * top
+    } else {
+        1.0 - 2.0 * (1.0 - bottom) * (1.0 - top)
+    };
+    return clip_u8(blended * 256.0);
+}
+
+pub fn create_color_lut(color: Rgb) -> ColorLUT {
+    let black = image::Rgb::<u8>([0, 0, 0]);
+    let mut lut = [black; 256];
+    for luma in 0..=255 {
+        let r = blend_overlay(luma, color.0[0]);
+        let g = blend_overlay(luma, color.0[1]);
+        let b = blend_overlay(luma, color.0[2]);
+        lut[luma as usize] = image::Rgb([r, g, b]);
+    }
+    ColorLUT(Some(lut))
+}
+
+fn hex_to_color(hex: String) -> Rgb {
+    let bytes = hex::decode(hex[1..=6].to_owned()).unwrap();
+    let color = [bytes[0], bytes[1], bytes[2]];
+    image::Rgb(color)
+}
+
+impl From<String> for ColorLUT {
+    fn from(value: String) -> Self {
+        let color = hex_to_color(value);
+        create_color_lut(color)
+    }
+}
+
+impl From<FractalRequestLuma> for FractalConfig<Luma> {
     fn from(value: FractalRequestLuma) -> Self {
-        FractalConfig::new(
-            value.max_iterations,
-            value
+        FractalConfig {
+            max_iterations: value.max_iterations,
+            constant: value
                 .constant
                 .unwrap_or(Point {
                     imaginary: 0.0,
                     real: 0.0,
                 })
                 .into(),
-            String::new(),
-            fractal::divergence_to_luma,
-            value.fractal_variant.into(),
-        )
+            color: ColorLUT(None),
+            divergence_to_pixel: fractal::divergence_to_luma,
+            create_pixel: value.fractal_variant.into(),
+        }
     }
 }
 
-impl From<FractalRequestLuma> for FractalImage<u8> {
+impl From<FractalRequestLuma> for FractalImage<Luma> {
     fn from(request: FractalRequestLuma) -> Self {
         Self::new(
             request.into(),
             request.top_left.into(),
             request.bottom_right.into(),
-            request.width_px as usize,
+            request.width_px as u32,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{blend_overlay, hex_to_color};
+
+    #[test]
+    fn parses_colors() {
+        let input = "#ff0000".to_owned();
+        let [r, g, b] = hex_to_color(input).0;
+        assert_eq!(r, 255);
+        assert_eq!(g, 0);
+        assert_eq!(b, 0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_on_invalid_hex() {
+        let input = "#ff000".to_owned();
+        hex_to_color(input);
+    }
+
+    #[test]
+    fn blends_grays() {
+        let color = hex_to_color("#ff9900".to_owned());
+        let gray: u8 = 127;
+        let r = blend_overlay(gray, color.0[0]);
+        let g = blend_overlay(gray, color.0[1]);
+        let b = blend_overlay(gray, color.0[2]);
+        [r, g, b].into_iter().enumerate().for_each(|(id, channel)| {
+            assert!(channel > 120, "Channel id={id} was too small ({channel})",);
+            assert!(channel < 135, "Channel id={id} was too large ({channel})",);
+        });
     }
 }

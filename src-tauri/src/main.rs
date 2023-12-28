@@ -9,7 +9,7 @@ use renderer::FractalImage;
 
 #[tauri::command]
 async fn calc_image(request: FractalRequestLuma) -> Vec<u8> {
-    FractalImage::from(request).render().take_pixels()
+    FractalImage::from(request).render().into_raw()
 }
 
 fn main() {

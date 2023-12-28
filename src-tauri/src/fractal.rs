@@ -1,38 +1,45 @@
 use num::complex::{Complex64, ComplexFloat};
+pub type Luma = image::Luma<u8>;
+pub type Rgb = image::Rgb<u8>;
 pub type CreatePixel<T> = fn(Complex64, &FractalConfig<T>) -> T;
-pub type CreatePixelLuma = fn(Complex64, &FractalConfig<u8>) -> u8;
+pub type CreatePixelLuma = fn(Complex64, &FractalConfig<Luma>) -> Luma;
+pub type CreatePixelRgb = fn(Complex64, &FractalConfig<Rgb>) -> Rgb;
+
+#[derive(Clone)]
+pub struct ColorLUT(pub Option<[Rgb; 256]>);
 
 #[derive(Clone)]
 pub struct FractalConfig<Pixel> {
     pub create_pixel: fn(Complex64, &FractalConfig<Pixel>) -> Pixel,
-    divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
-    max_iterations: u32,
-    color_hex: String,
-    constant: Complex64,
+    pub divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
+    pub max_iterations: u32,
+    pub color: ColorLUT,
+    pub constant: Complex64,
 }
 
-impl<Pixel> FractalConfig<Pixel> {
-    pub fn new(
-        max_iterations: u32,
-        constant: Complex64,
-        color_hex: String,
-        divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
-        create_pixel: fn(Complex64, &FractalConfig<Pixel>) -> Pixel,
-    ) -> Self {
-        Self {
-            create_pixel,
-            divergence_to_pixel,
-            max_iterations,
-            color_hex,
-            constant,
-        }
-    }
+pub fn clip_u8(input: f64) -> u8 {
+    input.round().max(0.0).min(255.0) as u8
 }
 
-pub fn divergence_to_luma(last_point: Complex64, iterations: u32, _: &FractalConfig<u8>) -> u8 {
+fn how_quickly_diverges(last_point: Complex64, iterations: u32) -> f64 {
     let abs = last_point.abs().log2().log2();
-    let value: f64 = (iterations as f64) + 1.0 - abs;
-    (value * 6.0).floor().max(0.0).min(256.0) as u8
+    let value = (iterations as f64) + 1.0 - abs;
+    value * 6.0
+}
+
+pub fn divergence_to_luma<T>(last_point: Complex64, iterations: u32, _: &FractalConfig<T>) -> Luma {
+    let luma = how_quickly_diverges(last_point, iterations);
+    Luma::from([clip_u8(luma); 1])
+}
+
+pub fn divergence_to_rgb(
+    last_point: Complex64,
+    iterations: u32,
+    config: &FractalConfig<Rgb>,
+) -> Rgb {
+    let luma = divergence_to_luma(last_point, iterations, config);
+    let rgb = config.color.0.unwrap()[luma.0[0] as usize];
+    rgb
 }
 
 fn in_bounds(point: &Complex64, radius: f64) -> bool {

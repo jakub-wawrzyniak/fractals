@@ -1,26 +1,27 @@
 use crate::fractal::*;
-use image::{save_buffer, ColorType};
+use image::ImageBuffer as __ImageBuffer;
 use num::{complex::Complex64, Complex};
 use std::{num::NonZeroUsize, thread, vec};
 
+type ImageBuffer<Px> = __ImageBuffer<Px, Vec<u8>>;
 pub struct FractalImage<Pixel> {
     config: FractalConfig<Pixel>,
-    height_px: usize,
-    width_px: usize,
+    height_px: u32,
+    width_px: u32,
     step: f64,
     top_left_bound: Complex64,
     bottom_right_bound: Complex64,
 }
 
-impl<Pixel> FractalImage<Pixel>
+impl<Px> FractalImage<Px>
 where
-    Pixel: Send + Clone + Sized + 'static + Default,
+    Px: image::Pixel<Subpixel = u8> + 'static,
 {
     pub fn new(
-        config: FractalConfig<Pixel>,
+        config: FractalConfig<Px>,
         domain_top_left_boundary: Complex64,
         domain_bottom_right_boundary: Complex64,
-        width_px: usize,
+        width_px: u32,
     ) -> Self {
         let Complex {
             re: real_min,
@@ -31,7 +32,7 @@ where
             im: imag_min,
         } = domain_bottom_right_boundary;
         let step = (real_max - real_min) / (width_px as f64);
-        let height_px = ((imag_max - imag_min) / step).floor() as usize;
+        let height_px = ((imag_max - imag_min) / step).floor() as u32;
 
         Self {
             config,
@@ -43,34 +44,25 @@ where
         }
     }
 
-    #[inline]
-    fn set_pixel(&self, buffer: &mut Vec<Pixel>, x: usize, y: usize, value: Pixel) {
-        let id = self.width_px * y + x;
-        buffer[id] = value;
-    }
-
-    pub fn render(&self) -> FractalRendered<Pixel> {
-        let mut pixels = vec![Pixel::default(); self.width_px * self.height_px];
+    pub fn render(&self) -> ImageBuffer<Px> {
+        let mut image = ImageBuffer::<Px>::new(self.width_px as u32, self.height_px as u32);
         let mut real = self.top_left_bound.re;
         for x in 0..self.width_px {
             let mut imag = self.bottom_right_bound.im;
             for y in 0..self.height_px {
                 let point = Complex64::new(real, imag);
                 let color = (self.config.create_pixel)(point, &self.config);
-                self.set_pixel(&mut pixels, x, y, color);
+                image.put_pixel(x, y, color);
                 imag += self.step;
             }
             real += self.step;
         }
-        FractalRendered {
-            pixels,
-            width_px: self.width_px,
-        }
+        image
     }
 
-    fn split_work(&self, chunks: usize) -> Vec<FractalImage<Pixel>> {
+    fn split_work(&self, chunks: u32) -> Vec<FractalImage<Px>> {
         let chunk_height = (self.height_px / chunks) + chunks;
-        let chunk_bottom_im = |chunk_id: usize| {
+        let chunk_bottom_im = |chunk_id: u32| {
             let id = chunk_id as f64;
             let height = chunk_height as f64;
             id * height * self.step + self.bottom_right_bound.im
@@ -103,109 +95,103 @@ where
         return jobs;
     }
 
-    fn delegate_and_run(&self, chunks: usize) -> FractalRendered<Pixel> {
+    fn delegate_and_run(&self, chunks: u32) -> ImageBuffer<Px> {
         let jobs = self.split_work(chunks);
         let mut handles = vec![];
         let mut pixels = vec![];
 
         for job in jobs {
-            handles.push(thread::spawn(move || job.render().take_pixels()))
+            handles.push(thread::spawn(move || job.render().into_raw()))
         }
 
         for handle in handles {
             pixels.append(&mut handle.join().unwrap())
         }
 
-        FractalRendered {
-            pixels,
-            width_px: self.width_px,
-        }
+        ImageBuffer::from_raw(self.width_px, self.height_px, pixels).unwrap()
     }
 
-    pub fn render_on_threads(self) -> FractalRendered<Pixel> {
+    pub fn render_on_threads(self) -> ImageBuffer<Px> {
         let mut chunks = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::MIN)
             .get();
         if chunks > 2 {
             chunks -= 1; // Spare one thread for UI
         }
-        self.delegate_and_run(chunks.max(4))
-    }
-}
-
-pub struct FractalRendered<Pixel> {
-    pixels: Vec<Pixel>,
-    width_px: usize,
-}
-
-impl<Pixel> FractalRendered<Pixel> {
-    pub fn take_pixels(self) -> Vec<Pixel> {
-        self.pixels
-    }
-}
-
-impl FractalRendered<u8> {
-    pub fn save_as(&self, name: String) {
-        let height_px = self.pixels.len() / self.width_px;
-        let result = image::save_buffer(
-            format!("./{name}"),
-            &self.pixels,
-            self.width_px as u32,
-            height_px as u32,
-            image::ColorType::L8,
-        );
-        match result {
-            Err(e) => eprintln!("{}", e.to_string()),
-            Ok(_) => (),
-        };
+        self.delegate_and_run(chunks.max(4) as u32)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::FractalImage;
-    use crate::fractal::{self, divergence_to_luma, CreatePixelLuma, FractalConfig};
+    use crate::{
+        api::create_color_lut,
+        fractal::{
+            self, divergence_to_luma, divergence_to_rgb, ColorLUT, CreatePixel, CreatePixelLuma,
+            CreatePixelRgb, FractalConfig, Luma, Rgb,
+        },
+    };
     use divan;
     use num::complex::Complex64;
-    const WIDTH_PX: usize = 512;
+    const WIDTH_PX: u32 = 512;
+    type GetConfig<Pixel> = fn(CreatePixel<Pixel>) -> FractalConfig<Pixel>;
 
-    fn new_config(fractal: CreatePixelLuma) -> FractalConfig<u8> {
-        FractalConfig::new(
-            1024,
-            Complex64::new(0.34, 0.08),
-            String::new(),
-            divergence_to_luma,
-            fractal,
-        )
+    fn config_grayscale(fractal: CreatePixelLuma) -> FractalConfig<Luma> {
+        FractalConfig {
+            max_iterations: 1024,
+            constant: Complex64::new(0.34, 0.08),
+            color: ColorLUT(None),
+            divergence_to_pixel: divergence_to_luma,
+            create_pixel: fractal,
+        }
     }
 
-    fn mandelbrot() -> FractalImage<u8> {
+    fn config_color(fractal: CreatePixelRgb) -> FractalConfig<Rgb> {
+        FractalConfig {
+            max_iterations: 1024,
+            constant: Complex64::new(0.34, 0.08),
+            color: create_color_lut(image::Rgb([255, 0, 0])),
+            divergence_to_pixel: divergence_to_rgb,
+            create_pixel: fractal,
+        }
+    }
+
+    fn mandelbrot<Pixel: image::Pixel<Subpixel = u8> + 'static>(
+        get_config: GetConfig<Pixel>,
+    ) -> FractalImage<Pixel> {
         FractalImage::new(
-            new_config(fractal::mandelbrot),
+            get_config(fractal::mandelbrot),
             Complex64::new(-3.0, 2.0),
             Complex64::new(2.0, -2.0),
             WIDTH_PX,
         )
     }
-    fn julia_set() -> FractalImage<u8> {
+    fn julia_set<Pixel: image::Pixel<Subpixel = u8> + 'static>(
+        get_config: GetConfig<Pixel>,
+    ) -> FractalImage<Pixel> {
         FractalImage::new(
-            new_config(fractal::julia_set),
+            get_config(fractal::julia_set),
             Complex64::new(-2.0, 2.0),
             Complex64::new(2.0, -2.0),
             WIDTH_PX,
         )
     }
-    fn burning_ship() -> FractalImage<u8> {
+    fn burning_ship<Pixel: image::Pixel<Subpixel = u8> + 'static>(
+        get_config: GetConfig<Pixel>,
+    ) -> FractalImage<Pixel> {
         FractalImage::new(
-            new_config(fractal::burning_ship),
+            get_config(fractal::burning_ship),
             Complex64::new(-2.35, 2.25),
             Complex64::new(2.65, -2.75),
             WIDTH_PX,
         )
     }
-    fn newton() -> FractalImage<u8> {
+    fn newton<Pixel: image::Pixel<Subpixel = u8> + 'static>(
+        get_config: GetConfig<Pixel>,
+    ) -> FractalImage<Pixel> {
         FractalImage::new(
-            new_config(fractal::newton),
+            get_config(fractal::newton),
             Complex64::new(-3.0, 3.0),
             Complex64::new(3.0, -3.0),
             WIDTH_PX,
@@ -214,7 +200,7 @@ mod tests {
 
     #[divan::bench]
     fn image_vec_serialization(bencher: divan::Bencher) {
-        let image = mandelbrot().render().take_pixels();
+        let image = mandelbrot(config_color).render().into_raw();
         bencher.bench(|| {
             serde_json::to_string(&image).unwrap();
         })
@@ -222,75 +208,96 @@ mod tests {
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_mandelbrot() {
-        mandelbrot().render();
+        mandelbrot(config_color).render();
+    }
+
+    #[divan::bench(sample_count = 10, threads = 1)]
+    fn rendered_mandelbrot_grau() {
+        mandelbrot(config_grayscale).render();
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_julia_set() {
-        julia_set().render();
+        julia_set(config_color).render();
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_burning_ship() {
-        burning_ship().render();
+        burning_ship(config_color).render();
     }
 
     #[divan::bench(sample_count = 3, threads = 1)]
     fn rendered_newton() {
-        newton().render();
+        newton(config_color).render();
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_mandelbrot_threaded(bencher: divan::Bencher) {
         bencher.bench(|| {
-            mandelbrot().render_on_threads();
+            mandelbrot(config_color).render_on_threads();
         })
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_mandelbrot_threads_two(bencher: divan::Bencher) {
         bencher.bench(|| {
-            mandelbrot().delegate_and_run(2);
+            mandelbrot(config_color).delegate_and_run(2);
         })
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_mandelbrot_threads_three(bencher: divan::Bencher) {
         bencher.bench(|| {
-            mandelbrot().delegate_and_run(3);
+            mandelbrot(config_color).delegate_and_run(3);
         })
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
     fn rendered_mandelbrot_threads_all(bencher: divan::Bencher) {
         bencher.bench(|| {
-            mandelbrot().delegate_and_run(6);
+            mandelbrot(config_color).delegate_and_run(6);
         })
     }
 
-    // #[test]
-    fn render_default_saves() {
+    #[test]
+    fn render_grayscale_saves() {
         FractalImage::new(
-            new_config(fractal::mandelbrot),
+            config_grayscale(fractal::mandelbrot),
             Complex64::new(-3.0, 2.0),
             Complex64::new(2.0, -2.0),
             1024,
         )
         .render()
-        .save_as("default.png".into());
+        .save("./gray.png".to_owned())
+        .unwrap();
+    }
+
+    #[test]
+    fn render_color_saves() {
+        FractalImage::new(
+            config_color(fractal::mandelbrot),
+            Complex64::new(-3.0, 2.0),
+            Complex64::new(2.0, -2.0),
+            1024,
+        )
+        .render()
+        .save("./color.png".to_owned())
+        .unwrap();
     }
 
     #[test]
     fn render_threaded_saves() {
-        mandelbrot()
+        mandelbrot(config_color)
             .render_on_threads()
-            .save_as("threads.png".into());
+            .save("./threads.png".to_owned())
+            .unwrap();
     }
 
-    // #[test]
+    #[test]
     fn render_two_threads_saves() {
-        mandelbrot()
+        mandelbrot(config_color)
             .delegate_and_run(2)
-            .save_as("two-threads.png".into());
+            .save("./two-threads.png".to_owned())
+            .unwrap();
     }
 }

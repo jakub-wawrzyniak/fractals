@@ -810,6 +810,7 @@ name = "fractals"
 version = "0.0.0"
 dependencies = [
  "divan",
+ "hex",
  "image",
  "num",
  "serde",

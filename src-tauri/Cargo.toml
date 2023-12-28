@@ -17,6 +17,7 @@ tauri = { version = "1.5", features = ["objc-exception", "wry"], default-feature
 serde = { version = "1.0.193", features = ["derive"] }
 num = "0.4.1"
 image = "0.24.7"
+hex = "0.4.3"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
@@ -40,5 +41,5 @@ opt-level = 3 # Optimize for binary size
 strip = "symbols" # Remove debug symbols
 
 [profile.dev]
-opt-level = 3
+#opt-level = 3
 
