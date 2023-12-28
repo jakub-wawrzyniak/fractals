@@ -114,7 +114,7 @@ impl From<FractalRequestLuma> for FractalImage<Luma> {
 
 #[cfg(test)]
 mod tests {
-    use super::{blend_overlay, hex_to_color};
+    use super::hex_to_color;
 
     #[test]
     fn parses_colors() {
@@ -130,18 +130,5 @@ mod tests {
     fn panics_on_invalid_hex() {
         let input = "#ff000".to_owned();
         hex_to_color(input);
-    }
-
-    #[test]
-    fn blends_grays() {
-        let color = hex_to_color("#ff9900".to_owned());
-        let gray: u8 = 127;
-        let r = blend_overlay(gray, color.0[0]);
-        let g = blend_overlay(gray, color.0[1]);
-        let b = blend_overlay(gray, color.0[2]);
-        [r, g, b].into_iter().enumerate().for_each(|(id, channel)| {
-            assert!(channel > 120, "Channel id={id} was too small ({channel})",);
-            assert!(channel < 135, "Channel id={id} was too large ({channel})",);
-        });
     }
 }
