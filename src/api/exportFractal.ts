@@ -33,7 +33,7 @@ const getViewportSelection = () => {
   return {
     left: min(start.x, end.x),
     top: min(start.y, end.y),
-    right: max(start.x, end.y),
+    right: max(start.x, end.x),
     bottom: max(start.y, end.y),
   };
 };
