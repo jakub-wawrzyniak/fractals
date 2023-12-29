@@ -3,7 +3,7 @@ use crate::{
     renderer::FractalImage,
 };
 use num::complex::Complex64;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Clone, Copy)]
 pub struct Point {
@@ -18,13 +18,25 @@ impl Into<Complex64> for Point {
 }
 
 #[derive(Deserialize, Clone, Copy)]
-pub struct FractalRequestLuma {
+pub struct FractalTileRequest {
     pub constant: Option<Point>,
     pub fractal_variant: FractalVariant,
     pub max_iterations: u32,
     pub top_left: Point,
     pub bottom_right: Point,
     pub width_px: f64,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct ExportFractalRequest {
+    pub constant: Option<Point>,
+    pub fractal_variant: FractalVariant,
+    pub max_iterations: u32,
+    pub top_left: Point,
+    pub bottom_right: Point,
+    pub width_px: f64,
+    pub color: String,
+    pub filepath: String,
 }
 
 #[derive(Deserialize, Clone, Copy)]
@@ -47,7 +59,6 @@ impl<T> Into<CreatePixel<T>> for FractalVariant {
 }
 
 fn blend_overlay(bottom: u8, top: u8) -> u8 {
-    // let (top, bottom) = (bottom, top);
     let bottom = bottom as f64 / 256.0;
     let top = top as f64 / 256.0;
     let blended = if bottom < 0.5 {
@@ -83,8 +94,8 @@ impl From<String> for ColorLUT {
     }
 }
 
-impl From<FractalRequestLuma> for FractalConfig<Luma> {
-    fn from(value: FractalRequestLuma) -> Self {
+impl From<FractalTileRequest> for FractalConfig<Luma> {
+    fn from(value: FractalTileRequest) -> Self {
         FractalConfig {
             max_iterations: value.max_iterations,
             constant: value
@@ -101,8 +112,26 @@ impl From<FractalRequestLuma> for FractalConfig<Luma> {
     }
 }
 
-impl From<FractalRequestLuma> for FractalImage<Luma> {
-    fn from(request: FractalRequestLuma) -> Self {
+impl From<ExportFractalRequest> for FractalConfig<Rgb> {
+    fn from(value: ExportFractalRequest) -> Self {
+        FractalConfig {
+            max_iterations: value.max_iterations,
+            constant: value
+                .constant
+                .unwrap_or(Point {
+                    imaginary: 0.0,
+                    real: 0.0,
+                })
+                .into(),
+            color: create_color_lut(hex_to_color(value.color)),
+            divergence_to_pixel: fractal::divergence_to_rgb,
+            create_pixel: value.fractal_variant.into(),
+        }
+    }
+}
+
+impl From<FractalTileRequest> for FractalImage<Luma> {
+    fn from(request: FractalTileRequest) -> Self {
         Self::new(
             request.into(),
             request.top_left.into(),
@@ -110,6 +139,24 @@ impl From<FractalRequestLuma> for FractalImage<Luma> {
             request.width_px as u32,
         )
     }
+}
+
+impl From<ExportFractalRequest> for FractalImage<Rgb> {
+    fn from(request: ExportFractalRequest) -> Self {
+        Self::new(
+            request.clone().into(),
+            request.top_left.into(),
+            request.bottom_right.into(),
+            request.width_px as u32,
+        )
+    }
+}
+
+#[derive(Serialize, Clone, Copy)]
+pub enum ExportResult {
+    Done,
+    ErrorBadFileType,
+    ErrorUnknown,
 }
 
 #[cfg(test)]

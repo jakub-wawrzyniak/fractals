@@ -18,6 +18,15 @@ type AppStore = {
     variant: Fractal;
   };
   export: {
+    status:
+      | "idle"
+      | "done"
+      | "exporting"
+      | "pickingFilePath"
+      | "errorUnknown"
+      | "errorBadFileType";
+    progress: number;
+    filepath: string;
     width: number;
     source: "selection" | "screen";
     selection: {
@@ -44,6 +53,9 @@ const initStore: AppStore = {
     constant: initConstant(initFractal),
   },
   export: {
+    status: "idle",
+    progress: 0,
+    filepath: "",
     width: 3000,
     source: "screen",
     selection: {
@@ -166,4 +178,14 @@ export const setExportHeight = (height: number) => {
 
 export const setExportWidth = (width: number) => {
   setStore("export", "width", width);
+};
+
+export const setExportStatus = (value: AppStore["export"]["status"]) => {
+  setStore("export", "status", value);
+};
+export const setExportProgress = (value: AppStore["export"]["progress"]) => {
+  setStore("export", "progress", value);
+};
+export const setExportFilepath = (value: AppStore["export"]["filepath"]) => {
+  setStore("export", "filepath", value);
 };

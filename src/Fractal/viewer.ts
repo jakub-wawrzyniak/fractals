@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { viewerDimensions, pointToComplex } from "./utils";
-import { CalcImageRequest, calcImage } from "../api";
+import { CalcTileRequest, calcImage } from "../api/calcTile";
 import { OpenSeadragonTileSourcePrototype, VIEWER_OPTIONS } from "./config";
 
 const createTileSource = (): OpenSeadragon.TileSource => {
@@ -55,7 +55,7 @@ const createTileSource = (): OpenSeadragon.TileSource => {
     downloadTileStart: async function (context) {
       const tileSize = this.getRequestedTileSize(context);
       const tileBounds = this.getTileBoundsInComplex(context);
-      const request: CalcImageRequest = {
+      const request: CalcTileRequest = {
         width_px: tileSize.width,
         ...tileBounds,
       };

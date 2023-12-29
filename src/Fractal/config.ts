@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { Size } from "../shared";
-import { CalcImageRequest } from "../api";
+import { CalcTileRequest } from "../api/calcTile";
 
 export const VIEWER_OPTIONS = {
   id: "fractal",
@@ -38,7 +38,7 @@ export type OpenSeadragonTileSourcePrototype =
     getRequestedTileSize(context: DownloadContext): Size;
     getTileBoundsInComplex(
       context: DownloadContext
-    ): Omit<CalcImageRequest, "width_px">;
+    ): Omit<CalcTileRequest, "width_px">;
     downloadTileStart(context: DownloadContext): void;
     // TODO: downloadTileAbort(context: DownloadContext): void;
     createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;

@@ -1,5 +1,16 @@
+import { Show } from "solid-js";
+import { onExportRequest } from "../api";
 import { store, setExportSource, HasChild } from "../shared";
 import { ExportSizePicker } from "./ExportSizePicker";
+
+const userFeedback: Record<typeof store.export.status, string> = {
+  done: "Export finished",
+  errorBadFileType: "Error: bad file type",
+  errorUnknown: "Unknown error :(",
+  exporting: "Exporting",
+  idle: "Export",
+  pickingFilePath: "Waiting for filepath",
+};
 
 type ExportSource = HasChild & { exportFrom: "screen" | "selection" };
 const ButtonExportSource = (props: ExportSource) => {
@@ -17,6 +28,10 @@ const ButtonExportSource = (props: ExportSource) => {
 };
 
 export const ExportConfig = () => {
+  const status = () => store.export.status;
+  const waiting = () => {
+    return status() === "exporting" || status() === "pickingFilePath";
+  };
   return (
     <form
       class="grow flex flex-col gap-3 justify-end pb-2"
@@ -35,11 +50,16 @@ export const ExportConfig = () => {
           custom fragment
         </ButtonExportSource>
       </div>
-      <input
-        type="submit"
-        class="btn btn-primary w-full uppercase font-variant-caps-[small-caps]"
-        value="Export"
-      />
+      <button
+        class="btn btn-primary w-full uppercase font-variant-caps-[small-caps] flex gap-1 justify-center items-center"
+        onClick={onExportRequest}
+        disabled={waiting()}
+      >
+        {userFeedback[status()]}
+        <Show when={waiting()}>
+          <span class="loading loading-dots loading-sm"></span>
+        </Show>
+      </button>
     </form>
   );
 };

@@ -13,11 +13,12 @@ edition = "2021"
 tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
-tauri = { version = "1.5", features = ["objc-exception", "wry"], default-features = false }
+tauri = { version = "1.5", features = [ "dialog-save", "objc-exception", "wry"], default-features = false }
 serde = { version = "1.0.193", features = ["derive"] }
 num = "0.4.1"
 image = "0.24.7"
 hex = "0.4.3"
+dirs = "5.0.1"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
