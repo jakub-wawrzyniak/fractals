@@ -142,8 +142,8 @@ export const setExportSelectionPoint = (
   setStore("export", "selection", name, point);
 };
 
-export const toggleIsSelecting = () => {
-  setStore("export", "selection", "isSelecting", (selecting) => !selecting);
+export const setIsSelecting = (selecting: boolean) => {
+  setStore("export", "selection", "isSelecting", selecting);
 };
 
 export const setExportSource = (value: AppStore["export"]["source"]) => {

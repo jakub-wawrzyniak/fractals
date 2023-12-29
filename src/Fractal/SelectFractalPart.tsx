@@ -3,7 +3,7 @@ import {
   Point,
   store,
   setExportSelectionPoint as setSelection,
-  toggleIsSelecting as toggleIsSelecting,
+  setIsSelecting,
 } from "../shared";
 
 type Event = MouseEvent & {
@@ -61,16 +61,17 @@ export const SelectFractalPart = () => {
         </svg>
         <div
           class="w-full h-full absolute top-0 left-0 cursor-crosshair"
-          onClick={(e) => {
-            if (!selection().isSelecting)
-              setSelection("start", getMousePosition(e));
-            toggleIsSelecting();
-          }}
+          onMouseUp={() => setIsSelecting(false)}
+          onMouseOut={() => setIsSelecting(false)}
           onMouseMove={
             selection().isSelecting
               ? (e) => setSelection("end", getMousePosition(e))
               : undefined
           }
+          onMouseDown={(e) => {
+            setSelection("start", getMousePosition(e));
+            setIsSelecting(true);
+          }}
         />
       </div>
     </Show>
