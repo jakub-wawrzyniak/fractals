@@ -48,7 +48,7 @@ const initStore: AppStore = {
   viewerAspectRatio: DEFAULT_ASPECT_RATIO, // this will be overwritten onMount
   fractal: {
     color: "#ff0000",
-    maxIterations: 1024,
+    maxIterations: 128,
     variant: initFractal,
     constant: initConstant(initFractal),
   },

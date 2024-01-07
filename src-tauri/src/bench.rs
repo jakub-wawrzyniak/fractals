@@ -1,5 +1,5 @@
+#![allow(dead_code)]
 mod api;
-#[allow(dead_code)]
 mod fractal;
 mod renderer;
 

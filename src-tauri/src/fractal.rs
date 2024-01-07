@@ -5,6 +5,15 @@ pub type CreatePixel<T> = fn(Complex64, &FractalConfig<T>) -> T;
 pub type CreatePixelLuma = fn(Complex64, &FractalConfig<Luma>) -> Luma;
 pub type CreatePixelRgb = fn(Complex64, &FractalConfig<Rgb>) -> Rgb;
 
+pub fn divergence_to_rgb(
+    last_point: Complex64,
+    iterations: u32,
+    config: &FractalConfig<Rgb>,
+) -> Rgb {
+    let luma = divergence_to_luma(last_point, iterations, config);
+    let rgb = config.color.0.unwrap()[luma.0[0] as usize];
+    rgb
+}
 #[derive(Clone)]
 pub struct ColorLUT(pub Option<[Rgb; 256]>);
 
@@ -21,25 +30,20 @@ pub fn clip_u8(input: f64) -> u8 {
     input.round().max(0.0).min(255.0) as u8
 }
 
-fn how_quickly_diverges(last_point: Complex64, iterations: u32) -> f64 {
-    let abs = last_point.abs().log2().log2();
-    let value = (iterations as f64) + 1.0 - abs;
-    value * 6.0
+fn sigmoid(arg: f64) -> f64 {
+    let denominator = std::f64::consts::E.powf(-arg) + 1.0;
+    return 1.0 / denominator;
 }
 
-pub fn divergence_to_luma<T>(last_point: Complex64, iterations: u32, _: &FractalConfig<T>) -> Luma {
-    let luma = how_quickly_diverges(last_point, iterations);
+fn squeeze(arg: f64) -> f64 {
+    debug_assert!(arg > 0.0, "squeezing only works for nums > 0");
+    arg / (1.0 + arg)
+}
+
+pub fn divergence_to_luma<T>(last_point: Complex64, _: u32, _: &FractalConfig<T>) -> Luma {
+    let value = sigmoid(last_point.norm());
+    let luma = value * 256.0;
     Luma::from([clip_u8(luma); 1])
-}
-
-pub fn divergence_to_rgb(
-    last_point: Complex64,
-    iterations: u32,
-    config: &FractalConfig<Rgb>,
-) -> Rgb {
-    let luma = divergence_to_luma(last_point, iterations, config);
-    let rgb = config.color.0.unwrap()[luma.0[0] as usize];
-    rgb
 }
 
 fn in_bounds(point: &Complex64, radius: f64) -> bool {
@@ -48,9 +52,10 @@ fn in_bounds(point: &Complex64, radius: f64) -> bool {
 }
 
 pub fn mandelbrot<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
+    const ESCAPE_RADIUS: f64 = 100.0;
     let mut iteration = 0;
-    let mut current = Complex64::new(0.0, 0.0);
-    while iteration < config.max_iterations && in_bounds(&current, 9.0) {
+    let mut current = point;
+    while in_bounds(&current, ESCAPE_RADIUS) && iteration < config.max_iterations {
         current = current.powi(2) + point;
         iteration += 1;
     }
@@ -58,10 +63,10 @@ pub fn mandelbrot<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pix
 }
 
 pub fn julia_set<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 2.0;
+    const ESCAPE_RADIUS: f64 = 100.0;
     let mut iteration = 0;
     let mut current = point;
-    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
+    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
         current = current.powi(2) + config.constant;
         iteration += 1;
     }
@@ -69,10 +74,10 @@ pub fn julia_set<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixe
 }
 
 pub fn burning_ship<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 3.0;
+    const ESCAPE_RADIUS: f64 = 100.0;
     let mut iteration = 0;
     let mut current = Complex64::new(0.0, 0.0);
-    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
+    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
         current = Complex64::new(current.re.abs(), current.im.abs()).powi(2) + point;
         iteration += 1;
     }
@@ -80,10 +85,10 @@ pub fn burning_ship<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> P
 }
 
 pub fn newton<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 2.0;
+    const ESCAPE_RADIUS: f64 = 100.0;
     let mut iteration = 0;
     let mut current = point;
-    while iteration < config.max_iterations && current.norm() < ESCAPE_RADIUS {
+    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
         let nominator = current.powi(3) * 2.0 + 1.0;
         let denominator = current.powi(2) * 3.0;
         current = nominator / denominator;

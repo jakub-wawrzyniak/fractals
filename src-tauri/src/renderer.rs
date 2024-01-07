@@ -121,7 +121,6 @@ where
         for handle in handles {
             pixels.append(&mut handle.join().unwrap())
         }
-        let expected = self.width_px * self.height_px;
         ImageBuffer::from_raw(self.width_px, self.height_px, pixels).unwrap()
     }
 
@@ -318,6 +317,7 @@ mod tests {
             .save("./threads.png".to_owned())
             .unwrap();
     }
+
     #[test]
     fn render_threaded_colors_saves() {
         mandelbrot(config_color)
