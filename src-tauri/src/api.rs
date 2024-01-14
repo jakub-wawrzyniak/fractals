@@ -1,5 +1,5 @@
 use crate::{
-    fractal::{self, clip_u8, ColorLUT, CreatePixel, FractalConfig, Luma, Rgb},
+    fractal::{self, clip_u8, ColorLUT, CreatePixel, FractalConfig, Luma, Rgba, NOT_TRANSPARENT},
     renderer::FractalImage,
 };
 use num::complex::Complex64;
@@ -17,7 +17,7 @@ impl Into<Complex64> for Point {
     }
 }
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone)]
 pub struct FractalTileRequest {
     pub constant: Option<Point>,
     pub fractal_variant: FractalVariant,
@@ -25,6 +25,7 @@ pub struct FractalTileRequest {
     pub top_left: Point,
     pub bottom_right: Point,
     pub width_px: f64,
+    pub color: String,
 }
 
 #[derive(Deserialize, Clone)]
@@ -69,22 +70,22 @@ fn blend_overlay(bottom: u8, top: u8) -> u8 {
     return clip_u8(blended * 256.0);
 }
 
-pub fn create_color_lut(color: Rgb) -> ColorLUT {
-    let black = image::Rgb::<u8>([0, 0, 0]);
+pub fn create_color_lut(color: Rgba) -> ColorLUT {
+    let black = image::Rgba::<u8>([0, 0, 0, 0]);
     let mut lut = [black; 256];
     for luma in 0..=255 {
         let r = blend_overlay(luma, color.0[0]);
         let g = blend_overlay(luma, color.0[1]);
         let b = blend_overlay(luma, color.0[2]);
-        lut[luma as usize] = image::Rgb([r, g, b]);
+        lut[luma as usize] = image::Rgba([r, g, b, NOT_TRANSPARENT]);
     }
     ColorLUT(Some(lut))
 }
 
-fn hex_to_color(hex: String) -> Rgb {
+fn hex_to_color(hex: String) -> Rgba {
     let bytes = hex::decode(hex[1..=6].to_owned()).unwrap();
-    let color = [bytes[0], bytes[1], bytes[2]];
-    image::Rgb(color)
+    let color = [bytes[0], bytes[1], bytes[2], NOT_TRANSPARENT];
+    image::Rgba(color)
 }
 
 impl From<String> for ColorLUT {
@@ -94,7 +95,7 @@ impl From<String> for ColorLUT {
     }
 }
 
-impl From<FractalTileRequest> for FractalConfig<Luma> {
+impl From<FractalTileRequest> for FractalConfig<Rgba> {
     fn from(value: FractalTileRequest) -> Self {
         FractalConfig {
             max_iterations: value.max_iterations,
@@ -105,14 +106,14 @@ impl From<FractalTileRequest> for FractalConfig<Luma> {
                     real: 0.0,
                 })
                 .into(),
-            color: ColorLUT(None),
-            divergence_to_pixel: fractal::divergence_to_luma,
+            color: create_color_lut(hex_to_color(value.color)),
+            divergence_to_pixel: fractal::divergence_to_rgb,
             create_pixel: value.fractal_variant.into(),
         }
     }
 }
 
-impl From<ExportFractalRequest> for FractalConfig<Rgb> {
+impl From<ExportFractalRequest> for FractalConfig<Rgba> {
     fn from(value: ExportFractalRequest) -> Self {
         FractalConfig {
             max_iterations: value.max_iterations,
@@ -130,10 +131,10 @@ impl From<ExportFractalRequest> for FractalConfig<Rgb> {
     }
 }
 
-impl From<FractalTileRequest> for FractalImage<Luma> {
+impl From<FractalTileRequest> for FractalImage<Rgba> {
     fn from(request: FractalTileRequest) -> Self {
         Self::new(
-            request.into(),
+            request.clone().into(),
             request.top_left.into(),
             request.bottom_right.into(),
             request.width_px as u32,
@@ -141,7 +142,7 @@ impl From<FractalTileRequest> for FractalImage<Luma> {
     }
 }
 
-impl From<ExportFractalRequest> for FractalImage<Rgb> {
+impl From<ExportFractalRequest> for FractalImage<Rgba> {
     fn from(request: ExportFractalRequest) -> Self {
         Self::new(
             request.clone().into(),
@@ -166,7 +167,7 @@ mod tests {
     #[test]
     fn parses_colors() {
         let input = "#ff0000".to_owned();
-        let [r, g, b] = hex_to_color(input).0;
+        let [r, g, b, _] = hex_to_color(input).0;
         assert_eq!(r, 255);
         assert_eq!(g, 0);
         assert_eq!(b, 0);

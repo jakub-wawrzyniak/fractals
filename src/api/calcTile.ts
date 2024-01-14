@@ -12,6 +12,7 @@ type FullRequest = CalcTileRequest & {
   constant: Complex;
   fractal_variant: Fractal;
   max_iterations: number;
+  color: string;
 };
 
 export const calcImage = async (req: CalcTileRequest): Promise<ImageData> => {
@@ -20,6 +21,7 @@ export const calcImage = async (req: CalcTileRequest): Promise<ImageData> => {
     fractal_variant: store.fractal.variant,
     constant: store.fractal.constant ?? { imaginary: 0, real: 0 },
     max_iterations: store.fractal.maxIterations,
+    color: store.fractal.color,
   };
 
   const pixels = await invoke<number[]>("calc_image", { request });

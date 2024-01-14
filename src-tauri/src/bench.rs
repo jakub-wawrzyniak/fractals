@@ -3,21 +3,27 @@ mod api;
 mod fractal;
 mod renderer;
 
-// use fractal::{divergence_to_luma, CreatePixelLuma, FractalConfig};
+// use api::create_color_lut;
+// use fractal::{divergence_to_rgb, CreatePixel, CreatePixelRgb, FractalConfig, Rgba};
 // use num::complex::Complex64;
 // use renderer::FractalImage;
-// fn new_config(fractal: CreatePixelLuma) -> FractalConfig<u8> {
-//     FractalConfig::new(
-//         1024,
-//         Complex64::new(0.34, 0.08),
-//         String::new(),
-//         divergence_to_luma,
-//         fractal,
-//     )
+// type GetConfig<Pixel> = fn(CreatePixel<Pixel>) -> FractalConfig<Pixel>;
+
+// fn config_color(fractal: CreatePixelRgb) -> FractalConfig<Rgba> {
+//     FractalConfig {
+//         max_iterations: 1024,
+//         constant: Complex64::new(0.34, 0.08),
+//         color: create_color_lut(image::Rgba([255, 0, 0, 0])),
+//         divergence_to_pixel: divergence_to_rgb,
+//         create_pixel: fractal,
+//     }
 // }
-// fn mandelbrot() -> FractalImage<u8> {
+
+// fn mandelbrot<Pixel: image::Pixel<Subpixel = u8> + 'static>(
+//     get_config: GetConfig<Pixel>,
+// ) -> FractalImage<Pixel> {
 //     FractalImage::new(
-//         new_config(fractal::mandelbrot),
+//         get_config(fractal::mandelbrot),
 //         Complex64::new(-3.0, 2.0),
 //         Complex64::new(2.0, -2.0),
 //         1024,
@@ -26,7 +32,5 @@ mod renderer;
 
 fn main() {
     divan::main();
-    // for _ in 0..50 {
-    //     mandelbrot().render_on_threads();
-    // }
+    // mandelbrot(config_color).delegate_and_run(6);
 }

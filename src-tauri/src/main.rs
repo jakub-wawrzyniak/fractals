@@ -10,7 +10,7 @@ use renderer::{take_and_flip, FractalImage};
 
 #[tauri::command]
 async fn calc_image(request: FractalTileRequest) -> Vec<u8> {
-    let image = FractalImage::from(request).render_on_threads();
+    let image = FractalImage::from(request).render();
     take_and_flip(image)
 }
 

@@ -72,13 +72,13 @@ export const onExportRequest = async () => {
   }
 
   type ExportFractalRequest = {
-    color: String;
+    color: string;
     width_px: number;
     top_left: Complex;
     bottom_right: Complex;
     max_iterations: number;
     fractal_variant: Fractal;
-    filepath: String;
+    filepath: string;
     constant?: Complex;
   };
 

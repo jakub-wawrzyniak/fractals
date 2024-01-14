@@ -1,21 +1,22 @@
 use num::complex::{Complex64, ComplexFloat};
 pub type Luma = image::Luma<u8>;
-pub type Rgb = image::Rgb<u8>;
+pub type Rgba = image::Rgba<u8>;
 pub type CreatePixel<T> = fn(Complex64, &FractalConfig<T>) -> T;
 pub type CreatePixelLuma = fn(Complex64, &FractalConfig<Luma>) -> Luma;
-pub type CreatePixelRgb = fn(Complex64, &FractalConfig<Rgb>) -> Rgb;
+pub type CreatePixelRgb = fn(Complex64, &FractalConfig<Rgba>) -> Rgba;
+pub const NOT_TRANSPARENT: u8 = 255;
 
 pub fn divergence_to_rgb(
     last_point: Complex64,
     iterations: u32,
-    config: &FractalConfig<Rgb>,
-) -> Rgb {
+    config: &FractalConfig<Rgba>,
+) -> Rgba {
     let luma = divergence_to_luma(last_point, iterations, config);
     let rgb = config.color.0.unwrap()[luma.0[0] as usize];
     rgb
 }
 #[derive(Clone)]
-pub struct ColorLUT(pub Option<[Rgb; 256]>);
+pub struct ColorLUT(pub Option<[Rgba; 256]>);
 
 #[derive(Clone)]
 pub struct FractalConfig<Pixel> {

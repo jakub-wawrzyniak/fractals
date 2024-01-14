@@ -1,7 +1,7 @@
 use crate::fractal::*;
 use image::ImageBuffer as __ImageBuffer;
 use num::{complex::Complex64, Complex};
-use std::{num::NonZeroUsize, thread, vec};
+use std::{mem::size_of, num::NonZeroUsize, thread, vec};
 
 type ImageBuffer<Px> = __ImageBuffer<Px, Vec<u8>>;
 pub struct FractalImage<Pixel> {
@@ -109,7 +109,7 @@ where
         return jobs;
     }
 
-    fn delegate_and_run(&self, chunks: u32) -> ImageBuffer<Px> {
+    pub fn delegate_and_run(&self, chunks: u32) -> ImageBuffer<Px> {
         let jobs = self.split_work(chunks);
         let mut handles = vec![];
         let mut pixels = vec![];
@@ -125,13 +125,13 @@ where
     }
 
     pub fn render_on_threads(self) -> ImageBuffer<Px> {
-        let mut chunks = thread::available_parallelism()
+        let chunks = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::MIN)
-            .get();
-        if chunks > 2 {
-            chunks -= 1; // Spare one thread for UI
-        }
-        self.delegate_and_run(chunks.max(4) as u32)
+            .get()
+            * 4;
+        self.delegate_and_run(chunks as u32)
+        // Some chunks are mutch faster to compute than others, if we
+        // make more threads than CPU cores, the load will average out
     }
 }
 
@@ -139,7 +139,7 @@ pub fn take_and_flip<Px: image::Pixel<Subpixel = u8>>(buffer: ImageBuffer<Px>) -
     let width = buffer.width() as usize;
     buffer
         .into_raw()
-        .chunks(width)
+        .chunks(width * size_of::<Px>())
         .into_iter()
         .rev()
         .flatten()
@@ -154,11 +154,13 @@ mod tests {
         api::create_color_lut,
         fractal::{
             self, divergence_to_luma, divergence_to_rgb, ColorLUT, CreatePixel, CreatePixelLuma,
-            CreatePixelRgb, FractalConfig, Luma, Rgb,
+            CreatePixelRgb, FractalConfig, Luma, Rgba,
         },
+        renderer::take_and_flip,
     };
     use divan;
     use num::complex::Complex64;
+
     const WIDTH_PX: u32 = 512;
     type GetConfig<Pixel> = fn(CreatePixel<Pixel>) -> FractalConfig<Pixel>;
 
@@ -172,11 +174,11 @@ mod tests {
         }
     }
 
-    fn config_color(fractal: CreatePixelRgb) -> FractalConfig<Rgb> {
+    fn config_color(fractal: CreatePixelRgb) -> FractalConfig<Rgba> {
         FractalConfig {
             max_iterations: 1024,
             constant: Complex64::new(0.34, 0.08),
-            color: create_color_lut(image::Rgb([255, 0, 0])),
+            color: create_color_lut(image::Rgba([255, 0, 0, 0])),
             divergence_to_pixel: divergence_to_rgb,
             create_pixel: fractal,
         }
@@ -264,9 +266,9 @@ mod tests {
     }
 
     #[divan::bench(sample_count = 10, threads = 1)]
-    fn rendered_mandelbrot_threads_two(bencher: divan::Bencher) {
+    fn rendered_mandelbrot_threads_24(bencher: divan::Bencher) {
         bencher.bench(|| {
-            mandelbrot(config_color).delegate_and_run(2);
+            mandelbrot(config_color).delegate_and_run(24);
         })
     }
 
@@ -282,6 +284,24 @@ mod tests {
         bencher.bench(|| {
             mandelbrot(config_color).delegate_and_run(6);
         })
+    }
+
+    #[test]
+    fn renders_buffer_with_expected_size() {
+        let rendered = mandelbrot(config_color).render();
+        let (width, height) = rendered.dimensions();
+        let full_size = width * height * 4; // 4 bytes for each pixel
+        assert_eq!(full_size as usize, rendered.into_raw().len());
+    }
+
+    #[test]
+    fn size_is_same_after_flipping() {
+        let rendered = mandelbrot(config_color).render();
+        let (width, height) = rendered.dimensions();
+        let expected_size = width * height * 4; // 4 bytes for each pixel
+
+        let got_size = take_and_flip(rendered).len() as u32;
+        assert_eq!(expected_size, got_size);
     }
 
     #[test]
