@@ -1,22 +1,13 @@
 import { dialog, invoke } from "@tauri-apps/api";
 import { pointToComplex } from "../Fractal/utils";
 import { fractalViewer } from "../Fractal/viewer";
-import { Complex, Fractal, setExportStatus, store } from "../shared";
+import { exportHeight, setExportStatus, store } from "../shared";
+import { ExportFractalRequest } from "./types";
+import { getFractalConfig } from "./utils";
 
 const getDefaultSaveDir = async () => {
   let path = await invoke<null | string>("get_default_save_dir");
   return path ?? undefined;
-};
-
-let retryingExportRequest = false;
-const tryExportLater = () => {
-  if (retryingExportRequest) {
-    retryingExportRequest = false;
-    return;
-  }
-
-  retryingExportRequest = true;
-  setTimeout(onExportRequest, 100); // Maybe in 100ms fractalViewer will be mounted?
 };
 
 const getViewportSelection = () => {
@@ -40,7 +31,7 @@ const getViewportSelection = () => {
 
 export const onExportRequest = async () => {
   if (fractalViewer === null) {
-    tryExportLater();
+    setExportStatus("errorUnknown")
     return;
   }
   setExportStatus("pickingFilePath");
@@ -71,26 +62,16 @@ export const onExportRequest = async () => {
     return;
   }
 
-  type ExportFractalRequest = {
-    color: string;
-    width_px: number;
-    top_left: Complex;
-    bottom_right: Complex;
-    max_iterations: number;
-    fractal_variant: Fractal;
-    filepath: string;
-    constant?: Complex;
-  };
-
   const request: ExportFractalRequest = {
+    fractal: getFractalConfig(),
+    fragment: {
+      height_px: exportHeight(),
+      width_px: store.export.width,
+      top_left: topLeft,
+      bottom_right: bottomRight,
+    },
     color: store.fractal.color,
-    width_px: store.export.width,
-    top_left: topLeft,
-    bottom_right: bottomRight,
-    max_iterations: store.fractal.maxIterations,
-    fractal_variant: store.fractal.variant,
     filepath,
-    constant: store.fractal.constant ?? undefined,
   };
 
   setExportStatus("exporting");

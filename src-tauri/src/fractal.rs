@@ -1,99 +1,85 @@
-use num::complex::{Complex64, ComplexFloat};
-pub type Luma = image::Luma<u8>;
-pub type Rgba = image::Rgba<u8>;
-pub type CreatePixel<T> = fn(Complex64, &FractalConfig<T>) -> T;
-pub type CreatePixelLuma = fn(Complex64, &FractalConfig<Luma>) -> Luma;
-pub type CreatePixelRgb = fn(Complex64, &FractalConfig<Rgba>) -> Rgba;
-pub const NOT_TRANSPARENT: u8 = 255;
+use num::complex::Complex64;
 
-pub fn divergence_to_rgb(
-    last_point: Complex64,
-    iterations: u32,
-    config: &FractalConfig<Rgba>,
-) -> Rgba {
-    let luma = divergence_to_luma(last_point, iterations, config);
-    let rgb = config.color.0.unwrap()[luma.0[0] as usize];
-    rgb
+pub struct ComplexItem {
+    pub index: u32,
+    pub value: Complex64,
 }
-#[derive(Clone)]
-pub struct ColorLUT(pub Option<[Rgba; 256]>);
 
-#[derive(Clone)]
-pub struct FractalConfig<Pixel> {
-    pub create_pixel: fn(Complex64, &FractalConfig<Pixel>) -> Pixel,
-    pub divergence_to_pixel: fn(Complex64, u32, &FractalConfig<Pixel>) -> Pixel,
+pub trait Fractal {
+    fn max_item_id(&self) -> u32;
+    fn next_item(&self, current_item: Complex64, point: &Complex64) -> Complex64;
+    fn in_bounds(&self, point: &Complex64) -> bool {
+        const ESCAPE_RADIUS: f64 = 100.0;
+        let distance = point.re * point.re + point.im * point.im;
+        return distance < ESCAPE_RADIUS;
+    }
+
+    fn eval(&self, point: Complex64) -> ComplexItem {
+        let mut item_id = 0;
+        let mut current_item = point;
+        while self.in_bounds(&current_item) && item_id < self.max_item_id() {
+            current_item = self.next_item(current_item, &point);
+            item_id += 1;
+        }
+        ComplexItem {
+            value: current_item,
+            index: item_id,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct FractalMandelbrot {
     pub max_iterations: u32,
-    pub color: ColorLUT,
+}
+impl Fractal for FractalMandelbrot {
+    fn next_item(&self, current_item: Complex64, point: &Complex64) -> Complex64 {
+        current_item.powi(2) + point
+    }
+    fn max_item_id(&self) -> u32 {
+        self.max_iterations
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct FractalJulia {
+    pub max_iterations: u32,
     pub constant: Complex64,
 }
-
-pub fn clip_u8(input: f64) -> u8 {
-    input.round().max(0.0).min(255.0) as u8
-}
-
-fn sigmoid(arg: f64) -> f64 {
-    let denominator = std::f64::consts::E.powf(-arg) + 1.0;
-    return 1.0 / denominator;
-}
-
-fn squeeze(arg: f64) -> f64 {
-    debug_assert!(arg > 0.0, "squeezing only works for nums > 0");
-    arg / (1.0 + arg)
-}
-
-pub fn divergence_to_luma<T>(last_point: Complex64, _: u32, _: &FractalConfig<T>) -> Luma {
-    let value = sigmoid(last_point.norm());
-    let luma = value * 256.0;
-    Luma::from([clip_u8(luma); 1])
-}
-
-fn in_bounds(point: &Complex64, radius: f64) -> bool {
-    let distance = point.re * point.re + point.im * point.im;
-    return distance < radius;
-}
-
-pub fn mandelbrot<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 100.0;
-    let mut iteration = 0;
-    let mut current = point;
-    while in_bounds(&current, ESCAPE_RADIUS) && iteration < config.max_iterations {
-        current = current.powi(2) + point;
-        iteration += 1;
+impl Fractal for FractalJulia {
+    fn next_item(&self, current_item: Complex64, _: &Complex64) -> Complex64 {
+        current_item.powi(2) + self.constant
     }
-    (config.divergence_to_pixel)(current, iteration, config)
+    fn max_item_id(&self) -> u32 {
+        self.max_iterations
+    }
 }
 
-pub fn julia_set<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 100.0;
-    let mut iteration = 0;
-    let mut current = point;
-    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
-        current = current.powi(2) + config.constant;
-        iteration += 1;
+#[derive(Clone, Copy)]
+pub struct FractalBurningShip {
+    pub max_iterations: u32,
+}
+impl Fractal for FractalBurningShip {
+    fn next_item(&self, current_item: Complex64, point: &Complex64) -> Complex64 {
+        let Complex64 { re, im } = current_item;
+        Complex64::new(re.abs(), im.abs()).powi(2) + point
     }
-    (config.divergence_to_pixel)(current, iteration, config)
+    fn max_item_id(&self) -> u32 {
+        self.max_iterations
+    }
 }
 
-pub fn burning_ship<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 100.0;
-    let mut iteration = 0;
-    let mut current = Complex64::new(0.0, 0.0);
-    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
-        current = Complex64::new(current.re.abs(), current.im.abs()).powi(2) + point;
-        iteration += 1;
-    }
-    (config.divergence_to_pixel)(current, iteration, config)
+#[derive(Clone, Copy)]
+pub struct FractalNewton {
+    pub max_iterations: u32,
 }
-
-pub fn newton<Pixel>(point: Complex64, config: &FractalConfig<Pixel>) -> Pixel {
-    const ESCAPE_RADIUS: f64 = 100.0;
-    let mut iteration = 0;
-    let mut current = point;
-    while iteration < config.max_iterations && in_bounds(&current, ESCAPE_RADIUS) {
-        let nominator = current.powi(3) * 2.0 + 1.0;
-        let denominator = current.powi(2) * 3.0;
-        current = nominator / denominator;
-        iteration += 1;
+impl Fractal for FractalNewton {
+    fn next_item(&self, current_item: Complex64, _: &Complex64) -> Complex64 {
+        let nominator = current_item.powi(3) * 2.0 + 1.0;
+        let denominator = current_item.powi(2) * 3.0;
+        nominator / denominator
     }
-    (config.divergence_to_pixel)(current, iteration, config)
+    fn max_item_id(&self) -> u32 {
+        self.max_iterations
+    }
 }

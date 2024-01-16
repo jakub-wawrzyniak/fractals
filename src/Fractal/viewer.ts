@@ -1,6 +1,6 @@
 import OpenSeadragon from "openseadragon";
 import { viewerDimensions, pointToComplex } from "./utils";
-import { CalcTileRequest, calcImage } from "../api/calcTile";
+import { FractalFragment, calcTile } from "../api";
 import { OpenSeadragonTileSourcePrototype, VIEWER_OPTIONS } from "./config";
 
 const createTileSource = (): OpenSeadragon.TileSource => {
@@ -55,12 +55,13 @@ const createTileSource = (): OpenSeadragon.TileSource => {
     downloadTileStart: async function (context) {
       const tileSize = this.getRequestedTileSize(context);
       const tileBounds = this.getTileBoundsInComplex(context);
-      const request: CalcTileRequest = {
+      const request: FractalFragment = {
+        height_px: tileSize.height,
         width_px: tileSize.width,
         ...tileBounds,
       };
 
-      const image = await calcImage(request);
+      const image = await calcTile(request);
       const canvas = document.createElement("canvas");
       canvas.width = tileSize.width;
       canvas.height = tileSize.height;

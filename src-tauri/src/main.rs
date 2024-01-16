@@ -3,24 +3,25 @@
 
 mod api;
 mod fractal;
+mod pixel;
 mod renderer;
 
-use api::{ExportFractalRequest, ExportResult, FractalTileRequest};
-use renderer::{take_and_flip, FractalImage};
+use api::{ExportRequest, ExportResult, TileRequest};
+use renderer::take_and_flip;
 
 #[tauri::command]
-async fn calc_image(request: FractalTileRequest) -> Vec<u8> {
-    let image = FractalImage::from(request).render();
+async fn calc_tile(request: TileRequest) -> Vec<u8> {
+    let image = request.run();
     take_and_flip(image)
 }
 
 #[tauri::command]
-async fn export_image(request: ExportFractalRequest) -> ExportResult {
+async fn export_image(request: ExportRequest) -> ExportResult {
     let path = request.filepath.clone();
     if let Err(_) = image::ImageFormat::from_path(&path) {
         return ExportResult::ErrorBadFileType;
     }
-    match FractalImage::from(request).render_on_threads().save(path) {
+    match request.run().save(path) {
         Err(_) => ExportResult::ErrorUnknown,
         Ok(_) => ExportResult::Done,
     }
@@ -41,7 +42,7 @@ fn get_default_save_dir() -> Option<String> {
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            calc_image,
+            calc_tile,
             export_image,
             get_default_save_dir
         ])
