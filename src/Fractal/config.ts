@@ -27,10 +27,6 @@ export type DownloadContext = {
   finish(ctx: CanvasRenderingContext2D): void;
 };
 
-type TileCache = {
-  _data: CanvasRenderingContext2D | null;
-};
-
 export type OpenSeadragonTileSourcePrototype =
   OpenSeadragon.TileSourceOptions & {
     getTilePostData(level: number, x: number, y: number): OsdTileRequest;
@@ -39,12 +35,6 @@ export type OpenSeadragonTileSourcePrototype =
       context: DownloadContext
     ): Omit<FractalFragment, "width_px" | "height_px">;
     downloadTileStart(context: DownloadContext): void;
-    // TODO: downloadTileAbort(context: DownloadContext): void;
-    createTileCache(cache: TileCache, data: CanvasRenderingContext2D): void;
-    destroyTileCache(cache: TileCache): void;
-    getTileCacheData(cache: TileCache): TileCache;
-    // TODO: getTileCacheDataAsImage(cache: TileCache): HTMLImageElement;
-    getTileCacheDataAsContext2D(cache: TileCache): CanvasRenderingContext2D;
     internalGetTileBounds(
       context: DownloadContext,
       isSource: boolean

@@ -7,12 +7,12 @@ mod pixel;
 mod renderer;
 
 use api::{ExportRequest, ExportResult, TileRequest};
-use renderer::take_and_flip;
+use renderer::into_data_url;
 
 #[tauri::command]
-async fn calc_tile(request: TileRequest) -> Vec<u8> {
+async fn calc_tile(request: TileRequest) -> String {
     let image = request.run();
-    take_and_flip(image)
+    into_data_url(image)
 }
 
 #[tauri::command]

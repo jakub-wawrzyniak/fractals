@@ -23,6 +23,7 @@ num = "0.4.1"
 image = "0.24.7"
 hex = "0.4.3"
 dirs = "5.0.1"
+base64 = "0.21.7"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
@@ -47,3 +48,4 @@ lto = true        # Enables link to optimizations
 
 [profile.dev]
 opt-level = 3
+debug = true

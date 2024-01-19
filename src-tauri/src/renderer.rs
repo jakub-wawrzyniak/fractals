@@ -1,5 +1,5 @@
 use crate::{fractal, pixel::PixelCreator};
-use image::ImageBuffer as __ImageBuffer;
+use image::{ImageBuffer as __ImageBuffer, PixelWithColorType};
 use num::complex::Complex64;
 use serde::Deserialize;
 use std::{mem::size_of, num::NonZeroUsize, thread, vec};
@@ -137,6 +137,23 @@ pub fn take_and_flip<Px: image::Pixel<Subpixel = u8>>(buffer: ImageBuffer<Px>) -
         .collect()
 }
 
+pub fn into_data_url<Px: image::Pixel<Subpixel = u8> + PixelWithColorType>(
+    raw: ImageBuffer<Px>,
+) -> String {
+    let (width, height) = (raw.width(), raw.height());
+    let flipped = take_and_flip(raw);
+    let img = ImageBuffer::<Px>::from_vec(width, height, flipped).unwrap();
+
+    use base64::prelude::*;
+    use std::io::Cursor;
+    let mut buffer = Vec::with_capacity(img.len());
+    let mut cursor = Cursor::new(&mut buffer);
+    img.write_to(&mut cursor, image::ImageOutputFormat::Png)
+        .unwrap();
+    let data = BASE64_STANDARD.encode(buffer);
+    format!("data:image/png;base64,{data}")
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -144,7 +161,7 @@ mod tests {
         pixel::{PixelLuma, PixelRgb},
     };
 
-    use super::{FractalFragment, FractalImage};
+    use super::{into_data_url, FractalFragment, FractalImage};
     use divan;
     use num::{complex::Complex64, Complex};
 
@@ -226,6 +243,16 @@ mod tests {
         mandelbrot().render_on_threads();
     }
 
+    #[divan::bench]
+    fn flip_and_encode(bencher: divan::Bencher) {
+        let img = mandelbrot().render();
+        bencher.bench(|| {
+            let copy = img.clone();
+            let data = into_data_url(copy);
+            serde_json::to_string(&data).unwrap();
+        })
+    }
+
     #[test]
     fn renders_buffer_with_expected_size() {
         let rendered = mandelbrot().render();
@@ -242,6 +269,21 @@ mod tests {
 
         let got_size = super::take_and_flip(rendered).len() as u32;
         assert_eq!(expected_size, got_size);
+    }
+
+    #[test]
+    #[should_panic]
+    fn encodes_png() {
+        use base64::prelude::*;
+        use std::io::Cursor;
+
+        let img = mandelbrot().render();
+        let mut buffer = Vec::with_capacity(img.len());
+        let mut cursor = Cursor::new(&mut buffer);
+        img.write_to(&mut cursor, image::ImageOutputFormat::Jpeg(70))
+            .unwrap();
+
+        println!("{}", BASE64_STANDARD.encode(buffer).len());
     }
 
     #[test]

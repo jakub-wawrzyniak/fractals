@@ -61,35 +61,9 @@ const createTileSource = (): OpenSeadragon.TileSource => {
         ...tileBounds,
       };
 
-      const image = await calcTile(request);
-      const canvas = document.createElement("canvas");
-      canvas.width = tileSize.width;
-      canvas.height = tileSize.height;
-      const ctx = canvas.getContext("2d")!;
-
-      ctx.putImageData(image, 0, 0);
-      context.finish(ctx);
-    },
-    /** OSD internal method */
-    createTileCache: function (cache, data) {
-      //cache is the cache object meant to attach items to
-      //data is context2D, just keep the reference
-      cache._data = data;
-    },
-    /** OSD internal method */
-    destroyTileCache: function (cache) {
-      //unset to allow GC collection
-      cache._data = null;
-    },
-    /** OSD internal method */
-    getTileCacheData: function (cache) {
-      //just return the raw data as it was given, part of API
-      return cache;
-    },
-    /** OSD internal method */
-    getTileCacheDataAsContext2D: function (cache) {
-      if (cache._data === null) throw "Cache is empty";
-      return cache._data;
+      const img = new Image();
+      img.onload = () => context.finish(img as any);
+      img.src = await calcTile(request);
     },
   };
 
