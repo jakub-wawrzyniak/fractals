@@ -34,7 +34,7 @@ export const useDebounced = <Data>({
   };
 };
 
-export const useAspectRatio = (elementId: string) => {
+export const useAspectRatio = (element: HTMLElement | null) => {
   const { update, ...info } = useDebounced({
     delayMs: 300,
     initValue: DEFAULT_ASPECT_RATIO,
@@ -47,9 +47,8 @@ export const useAspectRatio = (elementId: string) => {
   });
 
   onMount(() => {
-    const element = document.getElementById(elementId);
     if (element == undefined)
-      throw `useAspectRatio: element id=${elementId} nullish on mount`;
+      throw `useAspectRatio: element id=${element} nullish on mount`;
     observer.observe(element);
   });
   onCleanup(() => observer?.disconnect());

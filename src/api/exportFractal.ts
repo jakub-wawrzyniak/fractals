@@ -1,6 +1,6 @@
 import { dialog, invoke } from "@tauri-apps/api";
-import { pointToComplex } from "../Fractal/utils";
-import { fractalViewer } from "../Fractal/viewer";
+import { pointToComplex } from "../Fractal/_utils";
+import { fractalViewer } from "../Fractal/_viewer";
 import { exportHeight, setExportStatus, store } from "../shared";
 import { ExportFractalRequest } from "./types";
 import { getFractalConfig } from "./utils";
@@ -31,7 +31,7 @@ const getViewportSelection = () => {
 
 export const onExportRequest = async () => {
   if (fractalViewer === null) {
-    setExportStatus("errorUnknown")
+    setExportStatus("errorUnknown");
     return;
   }
   setExportStatus("pickingFilePath");
