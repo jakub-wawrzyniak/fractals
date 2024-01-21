@@ -1,12 +1,11 @@
 import { Application, Sprite } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
-import { Complex, Size } from "../shared";
+import { Complex, Point, Size } from "../shared";
 import {
-  Bounds,
   TILE_SIZE_PX,
-  center,
+  state,
+  Bounds,
   complexToViewport,
-  level,
   screenBounds,
 } from "./state";
 const { max, log2, ceil, floor } = Math;
@@ -14,6 +13,7 @@ const { max, log2, ceil, floor } = Math;
 export class Tile {
   private static cache = new Map<string, Tile>();
   private sprite: Sprite | "idle" | "loading" = "idle";
+  hash: string;
   level: number;
   x: number;
   y: number;
@@ -22,10 +22,7 @@ export class Tile {
     this.x = x;
     this.y = y;
     this.level = level;
-  }
-
-  hash(): string {
-    return `l=${this.level}  x=${this.x}  y=${this.y}`;
+    this.hash = `l=${this.level}  x=${this.x}  y=${this.y}`;
   }
 
   static byHash(hash: string): Tile | undefined {
@@ -34,10 +31,9 @@ export class Tile {
 
   static get(x: number, y: number, level: number): Tile {
     const newTile = new Tile(x, y, level);
-    const hash = newTile.hash();
-    const cachedTile = this.cache.get(hash);
+    const cachedTile = this.cache.get(newTile.hash);
     if (cachedTile !== undefined) return cachedTile;
-    this.cache.set(hash, newTile);
+    this.cache.set(newTile.hash, newTile);
     return newTile;
   }
 
@@ -87,7 +83,7 @@ export class Tile {
     const dataUrl = await calcTile(request);
     this.sprite = Sprite.from(dataUrl);
     this.sprite.anchor.set(0, 1);
-    this.sprite.name = this.hash();
+    this.sprite.name = this.hash;
   }
 
   draw(app: Application) {
@@ -96,9 +92,9 @@ export class Tile {
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
     const positionViewport = complexToViewport(positionComplex, app.view);
-    const notInStage = app.stage.getChildByName(this.hash()) === null;
+    const notInStage = app.stage.getChildByName(this.hash) === null;
     if (notInStage) app.stage.addChild(this.sprite);
-    const scale = 2 ** (this.level - level);
+    const scale = 2 ** (this.level - state.current.level);
     this.sprite.scale = { x: scale, y: scale };
     this.sprite.x = positionViewport.x;
     this.sprite.y = positionViewport.y;
@@ -123,8 +119,7 @@ export function tileWithPoint(level: number, point: Complex): Tile {
 export function tileNeighbours(tile: Tile, distance: number) {
   if (distance === 0) return [];
 
-  type Position = Record<"x" | "y", number>;
-  const positions: Position[] = [];
+  const positions: Point[] = [];
   for (let d = -distance; d <= distance; d++) {
     positions.push({ x: d, y: distance });
     positions.push({ x: d, y: -distance });
@@ -141,14 +136,13 @@ export function tileNeighbours(tile: Tile, distance: number) {
 }
 
 export function tilesOnScreen(screen: Size) {
-  const levels = levelsOnScreen(screen);
-  const minLevel = floor(level);
-  const maxLevel = minLevel + levels;
+  const minLevel = floor(state.current.level);
+  const maxLevel = minLevel + levelsOnScreen(screen);
   const tiles: Tile[] = [];
   for (let level = maxLevel; level >= minLevel; level--) {
     // TODO: Using <<math>> we can get the same effect,
     // but in a more efficient way.
-    const tile = tileWithPoint(level, center);
+    const tile = tileWithPoint(level, state.current.center);
     tiles.push(tile);
     let distance = 1;
     while (true) {

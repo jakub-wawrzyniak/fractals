@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Tile, tileNeighbours, tileWithPoint, tilesOnScreen } from "./tiles";
-import { Size, center, setCenter } from "./state";
+import { Size } from "../shared";
+import { Position, state } from "./state";
 
 describe("tileNeighbours", () => {
   it("excludes self", () => {
@@ -19,13 +20,13 @@ describe("tileNeighbours", () => {
 
 describe("tileWithPoint", () => {
   it("given center, always returns a tile on screen", () => {
-    setCenter({ real: 0.3, imaginary: 5 });
+    state.jumpTo(new Position(0.3, 5, -2));
     const screen: Size = {
       width: 1200,
       height: 800,
     };
     for (let level = -2; level < 3; level++) {
-      const tile = tileWithPoint(level, center);
+      const tile = tileWithPoint(level, state.current.center);
       const onScreen = tile.isOnScreen(screen);
       expect(onScreen, `level=${level}`).toBeTruthy();
     }
@@ -39,7 +40,7 @@ describe("tilesOnScreen", () => {
       height: 800,
     };
 
-    const hashes = tilesOnScreen(screen).map((tile) => tile.hash());
+    const hashes = tilesOnScreen(screen).map((tile) => tile.hash);
     expect(hashes.length).toBe(new Set(hashes).size);
   });
 });

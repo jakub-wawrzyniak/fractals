@@ -1,8 +1,15 @@
 import * as PIXI from "pixi.js";
 import { onMount } from "solid-js";
 import { Tile, tilesOnScreen } from "./tiles";
-import { changeCenterBy, changeLevelBy, pixelToComplex } from "./state";
-import { Complex, Point } from "../shared";
+import { Position, pixelToComplex, state } from "./state";
+import { Point } from "../shared";
+
+const getMousePosition = (e: PIXI.FederatedPointerEvent): Point => {
+  return {
+    x: e.clientX,
+    y: e.clientY,
+  };
+};
 
 export const FractalViewer = () => {
   const root = (
@@ -14,7 +21,8 @@ export const FractalViewer = () => {
     autoStart: false,
   });
 
-  app.ticker.add(() => {
+  app.ticker.add((elapsedFrames) => {
+    state.applyScheduledChange(elapsedFrames);
     app.stage.removeChildren();
     for (const tile of tilesOnScreen(app.view)) {
       tile.draw(app);
@@ -34,13 +42,6 @@ export const FractalViewer = () => {
     app.start();
   });
 
-  const getMousePosition = (e: PIXI.FederatedPointerEvent): Point => {
-    return {
-      x: e.clientX,
-      y: e.clientY,
-    };
-  };
-
   let dragStartedAt: Point | null = null;
   app.stage.eventMode = "static";
   app.stage.on("mouseup", () => (dragStartedAt = null));
@@ -53,16 +54,14 @@ export const FractalViewer = () => {
     if (dragStartedAt === null) return;
     const pixelRatio = pixelToComplex();
     const dragIsAt = getMousePosition(e);
-    const dragChange: Complex = {
-      real: -(dragIsAt.x - dragStartedAt.x) * pixelRatio,
-      imaginary: (dragIsAt.y - dragStartedAt.y) * pixelRatio,
-    };
-    changeCenterBy(dragChange);
+    const dx = -(dragIsAt.x - dragStartedAt.x) * pixelRatio;
+    const dy = (dragIsAt.y - dragStartedAt.y) * pixelRatio;
+    state.changeBy(new Position(dx, dy, 0));
     dragStartedAt = dragIsAt;
   });
   app.stage.on("wheel", (e) => {
-    const change = e.deltaY / 200;
-    changeLevelBy(change);
+    const levelChange = e.deltaY / 200;
+    state.changeBy(new Position(0, 0, levelChange));
   });
 
   return root;
