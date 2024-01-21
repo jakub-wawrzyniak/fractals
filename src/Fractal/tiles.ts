@@ -1,9 +1,8 @@
 import { Application, Sprite } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
-import { Complex } from "../shared";
+import { Complex, Size } from "../shared";
 import {
   Bounds,
-  Size,
   TILE_SIZE_PX,
   center,
   complexToViewport,
