@@ -2,7 +2,7 @@ import { Complex } from "../shared";
 
 export const TILE_SIZE_PX = 256;
 export let center = { real: 0.0, imaginary: 0.0 };
-export let level = -1;
+export let level = -1.7;
 
 export function setCenter(update: Complex) {
   center = update;

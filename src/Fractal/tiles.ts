@@ -26,7 +26,11 @@ export class Tile {
   }
 
   hash(): string {
-    return `${this.level}-${this.x}-${this.y}`;
+    return `l=${this.level}  x=${this.x}  y=${this.y}`;
+  }
+
+  static byHash(hash: string): Tile | undefined {
+    return this.cache.get(hash);
   }
 
   static get(x: number, y: number, level: number): Tile {
@@ -95,7 +99,7 @@ export class Tile {
     const positionViewport = complexToViewport(positionComplex, app.view);
     const notInStage = app.stage.getChildByName(this.hash()) === null;
     if (notInStage) app.stage.addChild(this.sprite);
-    const scale = level / this.level;
+    const scale = 2 ** (this.level - level);
     this.sprite.scale = { x: scale, y: scale };
     this.sprite.x = positionViewport.x;
     this.sprite.y = positionViewport.y;
