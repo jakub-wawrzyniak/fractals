@@ -12,7 +12,7 @@ const { max, log2, ceil, floor } = Math;
 
 export class Tile extends Sprite {
   private static cache = new Map<string, Tile>();
-  private status: "ready" | "idle" | "loading" = "idle";
+  private status: "ready" | "empty" | "loading" | "updating" = "empty";
   lastDrawnAt = 0;
   hash: string;
   level: number;
@@ -24,6 +24,7 @@ export class Tile extends Sprite {
     this.level = level;
     this.hash = hash;
     this.name = hash;
+    this.anchor.set(0, 1);
   }
 
   static getHash(x: number, y: number, level: number): string {
@@ -41,6 +42,16 @@ export class Tile extends Sprite {
     const newTile = new Tile(x, y, level, hash);
     this.cache.set(hash, newTile);
     return newTile;
+  }
+
+  static deleteStaleCache(frameTimestamp: number) {
+    if (!state.isCacheStale) return;
+    for (const tile of Tile.cache.values()) {
+      if (tile.lastDrawnAt !== frameTimestamp) {
+        Tile.cache.delete(tile.hash);
+      }
+    }
+    state.isCacheStale = false;
   }
 
   bounds(): Bounds {
@@ -65,8 +76,15 @@ export class Tile extends Sprite {
     return true;
   }
 
+  loadAction() {
+    if (this.status === "empty") return "loading";
+    if (state.isCacheStale) return "updating";
+    return "skip";
+  }
+
   async load() {
-    if (this.status === "loading") return;
+    const action = this.loadAction();
+    if (action === "skip") return;
     const bounds = this.bounds();
     const request: FractalFragment = {
       width_px: TILE_SIZE_PX,
@@ -81,16 +99,20 @@ export class Tile extends Sprite {
       },
     };
 
-    this.status = "loading";
+    this.status = action;
     const dataUrl = await calcTile(request);
     this.texture = Texture.from(dataUrl);
-    this.anchor.set(0, 1);
     this.status = "ready";
+    state.onTileLoaded();
+  }
+
+  canBeDrawn() {
+    return this.status === "ready" || this.status === "updating";
   }
 
   draw(app: Application, timestamp: number) {
-    if (this.status === "idle") this.load();
-    if (this.status !== "ready") return;
+    this.load();
+    if (!this.canBeDrawn()) return;
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
     const positionViewport = complexToViewport(positionComplex, app.view);

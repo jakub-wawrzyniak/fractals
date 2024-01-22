@@ -1,14 +1,17 @@
 import * as PIXI from "pixi.js";
-import { onMount } from "solid-js";
-import { removeUnusedTiles, sortTiles, tilesOnScreen } from "./tiles";
-import { Position, pixelToComplex, state } from "./state";
-import { Point } from "../shared";
+import { createEffect, onMount } from "solid-js";
+import { Tile, removeUnusedTiles, sortTiles, tilesOnScreen } from "./tiles";
+import { state } from "./state";
+import { attachInputHandlers } from "./handlers";
+import { store } from "../shared";
+import { Task } from "./utils";
 
-const getMousePosition = (e: PIXI.FederatedPointerEvent): Point => {
-  return {
-    x: e.clientX,
-    y: e.clientY,
-  };
+const trackFractalConfig = () => {
+  store.fractal.color;
+  store.fractal.variant;
+  store.fractal.constant?.imaginary;
+  store.fractal.constant?.real;
+  store.fractal.maxIterations;
 };
 
 export const FractalViewer = () => {
@@ -19,13 +22,26 @@ export const FractalViewer = () => {
   const app = new PIXI.Application({
     background: "#111",
     autoStart: false,
+    sharedTicker: true,
   });
 
+  attachInputHandlers(app);
+  addEventListener("resize", app.ticker.start);
+
+  const stopTicker = new Task(() => {
+    const ticker = PIXI.Ticker.shared;
+    if (ticker.started) ticker.stop();
+  }, 500);
+
   app.ticker.add((elapsedFrames) => {
+    if (state.shouldDraw()) stopTicker.cancel();
+    else stopTicker.schedule();
+
     state.applyScheduledChange(elapsedFrames);
     const time = performance.now();
     const tiles = tilesOnScreen(app.view);
     for (const tile of tiles) tile.draw(app, time);
+    Tile.deleteStaleCache(time);
     removeUnusedTiles(app, time);
     sortTiles(app);
   });
@@ -36,26 +52,11 @@ export const FractalViewer = () => {
     app.start();
   });
 
-  let dragStartedAt: Point | null = null;
-  app.stage.eventMode = "static";
-  app.stage.on("mouseup", () => (dragStartedAt = null));
-  app.stage.on("mousedown", (e) => {
-    dragStartedAt = getMousePosition(e);
-  });
-  app.stage.on("globalmousemove", (e) => {
-    const isPrimaryButtonPressed = e.buttons === 1;
-    if (!isPrimaryButtonPressed) return;
-    if (dragStartedAt === null) return;
-    const pixelRatio = pixelToComplex();
-    const dragIsAt = getMousePosition(e);
-    const dx = -(dragIsAt.x - dragStartedAt.x) * pixelRatio;
-    const dy = (dragIsAt.y - dragStartedAt.y) * pixelRatio;
-    state.changeBy(new Position(dx, dy, 0));
-    dragStartedAt = dragIsAt;
-  });
-  app.stage.on("wheel", (e) => {
-    const levelChange = e.deltaY / 200;
-    state.changeBy(new Position(0, 0, levelChange));
+  let initialLoad = true;
+  createEffect(() => {
+    trackFractalConfig();
+    if (initialLoad) initialLoad = false;
+    else state.onCacheInvalid();
   });
 
   return root;

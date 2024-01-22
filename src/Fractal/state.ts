@@ -1,3 +1,4 @@
+import { Ticker } from "pixi.js";
 import { Complex, Point, Size } from "../shared";
 
 export class Position {
@@ -51,16 +52,19 @@ function easeOut(x: number): number {
 export const TILE_SIZE_PX = 512;
 const INIT_POSITION = new Position(0, 0, -2);
 class State {
+  firstLoad = true;
+  isCacheStale = false;
+  newTilesReady = false;
   current = INIT_POSITION.clone();
   private goingFrom = INIT_POSITION.clone();
   private goingTo = INIT_POSITION.clone();
   private progress = 1;
-  private shouldFetchTiles = true;
 
   private resetTransition() {
     const isInTarget = this.current.equals(this.goingTo);
     this.progress = isInTarget ? 1 : 0;
     this.goingFrom = this.current.clone();
+    this.startTicker();
   }
 
   jumpTo(target: Position) {
@@ -74,8 +78,28 @@ class State {
     this.resetTransition();
   }
 
+  private startTicker() {
+    if (Ticker.shared.started) return;
+    else Ticker.shared.start();
+  }
+
+  onTileLoaded() {
+    this.newTilesReady = true;
+    this.startTicker();
+  }
+
+  onCacheInvalid() {
+    this.isCacheStale = true;
+    this.startTicker();
+  }
+
   shouldDraw() {
-    return this.progress !== 1 || this.shouldFetchTiles;
+    const inTransition = this.progress !== 1;
+    const drawsOnLoad = this.firstLoad;
+    const drawsNewTiles = this.newTilesReady;
+    this.firstLoad = false;
+    this.newTilesReady = false;
+    return inTransition || drawsNewTiles || this.isCacheStale || drawsOnLoad;
   }
 
   applyScheduledChange(elapsedFrames: number) {
@@ -89,6 +113,7 @@ class State {
     if (reachesTarget) {
       this.current = this.goingTo.clone();
       this.progress = 1;
+      return;
     }
 
     const fullDistance = this.goingFrom.distanceTo(this.goingTo);
