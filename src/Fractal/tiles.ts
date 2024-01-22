@@ -1,4 +1,4 @@
-import { Application, Sprite } from "pixi.js";
+import { Application, Sprite, Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
 import { Complex, Point, Size } from "../shared";
 import {
@@ -10,19 +10,24 @@ import {
 } from "./state";
 const { max, log2, ceil, floor } = Math;
 
-export class Tile {
+export class Tile extends Sprite {
   private static cache = new Map<string, Tile>();
-  private sprite: Sprite | "idle" | "loading" = "idle";
+  private status: "ready" | "idle" | "loading" = "idle";
+  lastDrawnAt = 0;
   hash: string;
   level: number;
-  x: number;
-  y: number;
+  point: Point;
 
-  private constructor(x: number, y: number, level: number) {
-    this.x = x;
-    this.y = y;
+  private constructor(x: number, y: number, level: number, hash: string) {
+    super();
+    this.point = { x, y };
     this.level = level;
-    this.hash = `l=${this.level}  x=${this.x}  y=${this.y}`;
+    this.hash = hash;
+    this.name = hash;
+  }
+
+  static getHash(x: number, y: number, level: number): string {
+    return `l=${level}  x=${x}  y=${y}`;
   }
 
   static byHash(hash: string): Tile | undefined {
@@ -30,17 +35,18 @@ export class Tile {
   }
 
   static get(x: number, y: number, level: number): Tile {
-    const newTile = new Tile(x, y, level);
-    const cachedTile = this.cache.get(newTile.hash);
+    const hash = Tile.getHash(x, y, level);
+    const cachedTile = this.cache.get(hash);
     if (cachedTile !== undefined) return cachedTile;
-    this.cache.set(newTile.hash, newTile);
+    const newTile = new Tile(x, y, level, hash);
+    this.cache.set(hash, newTile);
     return newTile;
   }
 
   bounds(): Bounds {
     const sizeComplex = 2 ** this.level;
-    const left = this.x * sizeComplex;
-    const bottom = this.y * sizeComplex;
+    const left = this.point.x * sizeComplex;
+    const bottom = this.point.y * sizeComplex;
     return {
       left,
       bottom,
@@ -59,12 +65,8 @@ export class Tile {
     return true;
   }
 
-  isLoading(): boolean {
-    return this.sprite === "loading";
-  }
-
   async load() {
-    if (this.sprite === "loading") return;
+    if (this.status === "loading") return;
     const bounds = this.bounds();
     const request: FractalFragment = {
       width_px: TILE_SIZE_PX,
@@ -79,25 +81,26 @@ export class Tile {
       },
     };
 
-    this.sprite = "loading";
+    this.status = "loading";
     const dataUrl = await calcTile(request);
-    this.sprite = Sprite.from(dataUrl);
-    this.sprite.anchor.set(0, 1);
-    this.sprite.name = this.hash;
+    this.texture = Texture.from(dataUrl);
+    this.anchor.set(0, 1);
+    this.status = "ready";
   }
 
-  draw(app: Application) {
-    if (this.sprite === "idle") this.load();
-    if (typeof this.sprite === "string") return;
+  draw(app: Application, timestamp: number) {
+    if (this.status === "idle") this.load();
+    if (this.status !== "ready") return;
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
     const positionViewport = complexToViewport(positionComplex, app.view);
     const notInStage = app.stage.getChildByName(this.hash) === null;
-    if (notInStage) app.stage.addChild(this.sprite);
+    if (notInStage) app.stage.addChild(this);
     const scale = 2 ** (this.level - state.current.level);
-    this.sprite.scale = { x: scale, y: scale };
-    this.sprite.x = positionViewport.x;
-    this.sprite.y = positionViewport.y;
+    this.scale = { x: scale, y: scale };
+    this.x = positionViewport.x;
+    this.y = positionViewport.y;
+    this.lastDrawnAt = timestamp;
   }
 }
 
@@ -129,8 +132,8 @@ export function tileNeighbours(tile: Tile, distance: number) {
     positions.push({ x: -distance, y: d });
   }
   return positions.map((pos) => {
-    const x = tile.x + pos.x;
-    const y = tile.y + pos.y;
+    const x = tile.point.x + pos.x;
+    const y = tile.point.y + pos.y;
     return Tile.get(x, y, tile.level);
   });
 }
@@ -154,4 +157,25 @@ export function tilesOnScreen(screen: Size) {
     }
   }
   return tiles;
+}
+
+export function sortTiles(app: Application) {
+  app.stage.children.sort((first, second) => {
+    // Duck typing. I don't want unnessesary ifs in the rendering loop.
+    try {
+      return (second as Tile).level - (first as Tile).level;
+    } catch {
+      return 0;
+    }
+  });
+}
+
+export function removeUnusedTiles(app: Application, now: number) {
+  let index = 0;
+  while (index < app.stage.children.length) {
+    const tile = app.stage.children[index] as Tile;
+    const isUsed = tile.lastDrawnAt === now;
+    if (!isUsed) app.stage.removeChildAt(index);
+    else index++;
+  }
 }

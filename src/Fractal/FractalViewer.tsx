@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { onMount } from "solid-js";
-import { Tile, tilesOnScreen } from "./tiles";
+import { removeUnusedTiles, sortTiles, tilesOnScreen } from "./tiles";
 import { Position, pixelToComplex, state } from "./state";
 import { Point } from "../shared";
 
@@ -23,17 +23,11 @@ export const FractalViewer = () => {
 
   app.ticker.add((elapsedFrames) => {
     state.applyScheduledChange(elapsedFrames);
-    app.stage.removeChildren();
-    for (const tile of tilesOnScreen(app.view)) {
-      tile.draw(app);
-    }
-    app.stage.children.sort((first, second) => {
-      const tile1 = Tile.byHash(first.name ?? "");
-      const tile2 = Tile.byHash(second.name ?? "");
-      if (tile1 === undefined) return 0;
-      if (tile2 === undefined) return 0;
-      return tile2.level - tile1.level;
-    });
+    const time = performance.now();
+    const tiles = tilesOnScreen(app.view);
+    for (const tile of tiles) tile.draw(app, time);
+    removeUnusedTiles(app, time);
+    sortTiles(app);
   });
 
   onMount(() => {

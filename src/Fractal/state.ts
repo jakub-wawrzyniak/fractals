@@ -48,13 +48,14 @@ function easeOut(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
 }
 
-export const TILE_SIZE_PX = 256;
+export const TILE_SIZE_PX = 512;
 const INIT_POSITION = new Position(0, 0, -2);
 class State {
   current = INIT_POSITION.clone();
   private goingFrom = INIT_POSITION.clone();
   private goingTo = INIT_POSITION.clone();
   private progress = 1;
+  private shouldFetchTiles = true;
 
   private resetTransition() {
     const isInTarget = this.current.equals(this.goingTo);
@@ -71,6 +72,10 @@ class State {
   changeBy(vector: Position) {
     this.goingTo.changeBy(vector);
     this.resetTransition();
+  }
+
+  shouldDraw() {
+    return this.progress !== 1 || this.shouldFetchTiles;
   }
 
   applyScheduledChange(elapsedFrames: number) {
