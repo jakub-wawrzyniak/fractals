@@ -52,7 +52,7 @@ export const SelectFractalPart = () => {
             </mask>
           </defs>
           <rect
-            fill="white"
+            fill="black"
             opacity="20%"
             width="100%"
             height="100%"

@@ -16,6 +16,7 @@ export type FractalConfig = {
 export type FullCalcTileRequest = {
   fragment: FractalFragment;
   fractal: FractalConfig;
+  color: string;
 };
 
 export type ExportFractalRequest = FullCalcTileRequest & {

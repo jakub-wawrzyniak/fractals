@@ -53,10 +53,20 @@ export const FractalViewer = () => {
   });
 
   let initialLoad = true;
+  let lastVariant = store.fractal.variant;
   createEffect(() => {
     trackFractalConfig();
-    if (initialLoad) initialLoad = false;
-    else state.onCacheInvalid();
+    if (initialLoad) {
+      initialLoad = false;
+      return;
+    }
+
+    const variant = store.fractal.variant;
+    if (variant === lastVariant) state.onCacheInvalid();
+    else {
+      state.onFractalChange();
+      lastVariant = variant;
+    }
   });
 
   return root;

@@ -30,10 +30,6 @@ const getViewportSelection = () => {
 };
 
 export const onExportRequest = async () => {
-  if (fractalViewer === null) {
-    setExportStatus("errorUnknown");
-    return;
-  }
   setExportStatus("pickingFilePath");
   const bounds = fractalViewer.viewport.getBounds();
   const viewportSelection = getViewportSelection();

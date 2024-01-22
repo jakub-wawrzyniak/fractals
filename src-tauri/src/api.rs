@@ -1,5 +1,5 @@
 use crate::fractal::*;
-use crate::pixel::{Luma, PixelLuma, PixelRgb, Rgb};
+use crate::pixel::{PixelRgb, Rgb};
 use crate::renderer::{FractalFragment, FractalImage, ImageBuffer};
 use num::complex::Complex64;
 use serde::{Deserialize, Serialize};
@@ -46,6 +46,7 @@ struct FractalConfig {
 pub struct TileRequest {
     fractal: FractalConfig,
     fragment: FractalFragment<Point>,
+    color: String,
 }
 
 #[derive(Deserialize, Clone)]
@@ -57,11 +58,11 @@ pub struct ExportRequest {
 }
 
 impl TileRequest {
-    pub fn run(self) -> ImageBuffer<Luma> {
+    pub fn run(self) -> ImageBuffer<Rgb> {
         use FractalVariant::*;
         let max_iterations = self.fractal.max_iterations;
         let fragment: FractalFragment<Complex64> = self.fragment.into();
-        let pixel_creator = PixelLuma;
+        let pixel_creator = PixelRgb::from_hex(self.color);
         match self.fractal.variant {
             Mandelbrot => (FractalImage {
                 fragment,

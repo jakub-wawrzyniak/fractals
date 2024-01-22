@@ -1,5 +1,5 @@
 import { Ticker } from "pixi.js";
-import { Complex, Point, Size } from "../shared";
+import { Complex, Point, Size, fractalConfig } from "../shared";
 
 export class Position {
   center: Complex;
@@ -49,16 +49,19 @@ function easeOut(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
 }
 
+function initPosition() {
+  const center = fractalConfig().offsetGraphInComplex;
+  return new Position(center.real, center.imaginary, 1);
+}
+
 export const TILE_SIZE_PX = 512;
-const INIT_POSITION = new Position(0, 0, -2);
-class State {
-  firstLoad = true;
-  isCacheStale = false;
-  newTilesReady = false;
-  current = INIT_POSITION.clone();
-  private goingFrom = INIT_POSITION.clone();
-  private goingTo = INIT_POSITION.clone();
+class ViewerState {
   private progress = 1;
+  private goingFrom = initPosition();
+  private goingTo = initPosition();
+  current = initPosition();
+  newTilesReady = false;
+  isCacheStale = true;
 
   private resetTransition() {
     const isInTarget = this.current.equals(this.goingTo);
@@ -93,13 +96,16 @@ class State {
     this.startTicker();
   }
 
+  onFractalChange() {
+    this.jumpTo(initPosition());
+    this.onCacheInvalid();
+  }
+
   shouldDraw() {
     const inTransition = this.progress !== 1;
-    const drawsOnLoad = this.firstLoad;
     const drawsNewTiles = this.newTilesReady;
-    this.firstLoad = false;
     this.newTilesReady = false;
-    return inTransition || drawsNewTiles || this.isCacheStale || drawsOnLoad;
+    return inTransition || drawsNewTiles || this.isCacheStale;
   }
 
   applyScheduledChange(elapsedFrames: number) {
@@ -124,7 +130,7 @@ class State {
   }
 }
 
-export const state = new State();
+export const state = new ViewerState();
 
 export type Bounds = {
   top: number;
