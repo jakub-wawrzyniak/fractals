@@ -1,6 +1,7 @@
 import { Application, FederatedPointerEvent } from "pixi.js";
 import { Point } from "../shared";
-import { Position, pixelToComplex, state } from "./state";
+import { Position, state } from "./state";
+import { pixelToComplex } from "./utils";
 
 function getMousePosition(e: FederatedPointerEvent): Point {
   return {

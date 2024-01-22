@@ -1,5 +1,4 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
-import { DEFAULT_ASPECT_RATIO } from "../shared";
 
 type DebounceArgs<T> = {
   delayMs: number;
@@ -37,7 +36,7 @@ export const useDebounced = <Data>({
 export const useAspectRatio = (element: HTMLElement | null) => {
   const { update, ...info } = useDebounced({
     delayMs: 300,
-    initValue: DEFAULT_ASPECT_RATIO,
+    initValue: 1,
   });
 
   const observer = new ResizeObserver((entries) => {

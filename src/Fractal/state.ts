@@ -1,5 +1,5 @@
 import { Ticker } from "pixi.js";
-import { Complex, Point, Size, fractalConfig } from "../shared";
+import { Complex, fractalConfig } from "../shared";
 
 export class Position {
   center: Complex;
@@ -138,49 +138,3 @@ export type Bounds = {
   left: number;
   right: number;
 };
-
-export function pixelToComplex(): number {
-  const tileSizeComplex = 2 ** state.current.level;
-  return tileSizeComplex / TILE_SIZE_PX;
-}
-
-export function screenBounds(size: Size): Bounds {
-  const pixelRatio = pixelToComplex();
-  const widthComplex = size.width * pixelRatio;
-  const heightComplex = size.height * pixelRatio;
-  const center = state.current.center;
-  return {
-    top: center.imaginary + heightComplex * 0.5,
-    bottom: center.imaginary - heightComplex * 0.5,
-    left: center.real - widthComplex * 0.5,
-    right: center.real + widthComplex * 0.5,
-  };
-}
-
-export function complexToViewport(position: Complex, screen: Size): Point {
-  const pixelRatio = 1 / pixelToComplex();
-  const center = state.current.center;
-  const distance: Complex = {
-    real: position.real - center.real,
-    imaginary: position.imaginary - center.imaginary,
-  };
-
-  return {
-    x: screen.width * 0.5 + distance.real * pixelRatio,
-    y: screen.height * 0.5 - distance.imaginary * pixelRatio,
-  };
-}
-
-export function viewportToComplex(position: Point, screen: Size): Complex {
-  const pixelRatio = pixelToComplex();
-  const center = state.current.center;
-  const change: Point = {
-    x: position.x - screen.width * 0.5,
-    y: position.y - screen.height * 0.5,
-  };
-
-  return {
-    real: center.real + change.x * pixelRatio,
-    imaginary: center.imaginary - change.y * pixelRatio,
-  };
-}

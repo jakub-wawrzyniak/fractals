@@ -1,16 +1,16 @@
 import { dialog, invoke } from "@tauri-apps/api";
-import { pointToComplex } from "../Fractal/_utils";
-import { fractalViewer } from "../Fractal/_viewer";
+import { viewportToComplex } from "../Fractal/utils";
 import { exportHeight, setExportStatus, store } from "../shared";
 import { ExportFractalRequest } from "./types";
 import { getFractalConfig } from "./utils";
+import { Bounds } from "../Fractal/state";
 
 const getDefaultSaveDir = async () => {
   let path = await invoke<null | string>("get_default_save_dir");
   return path ?? undefined;
 };
 
-const getViewportSelection = () => {
+const getViewportSelection = (): Bounds => {
   if (store.export.source === "screen")
     return {
       left: 0,
@@ -31,16 +31,22 @@ const getViewportSelection = () => {
 
 export const onExportRequest = async () => {
   setExportStatus("pickingFilePath");
-  const bounds = fractalViewer.viewport.getBounds();
+  const screen = store.viewer;
   const viewportSelection = getViewportSelection();
-  const topLeft = pointToComplex({
-    x: bounds.x + bounds.width * viewportSelection.left,
-    y: bounds.y + bounds.height * viewportSelection.top,
-  });
-  const bottomRight = pointToComplex({
-    x: bounds.x + bounds.width * viewportSelection.right,
-    y: bounds.y + bounds.height * viewportSelection.bottom,
-  });
+  const topLeft = viewportToComplex(
+    {
+      x: screen.width * viewportSelection.left,
+      y: screen.height * viewportSelection.top,
+    },
+    screen
+  );
+  const bottomRight = viewportToComplex(
+    {
+      x: screen.width * viewportSelection.right,
+      y: screen.height * viewportSelection.bottom,
+    },
+    screen
+  );
 
   const filepath = await dialog.save({
     defaultPath: store.export.filepath || (await getDefaultSaveDir()),

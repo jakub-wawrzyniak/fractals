@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-// import { onExportRequest } from "../api";
+import { onExportRequest } from "../api";
 import { store, setExportSource, HasChild } from "../shared";
 import { ExportSizePicker } from "./ExportSizePicker";
 
@@ -52,7 +52,7 @@ export const ExportConfig = () => {
       </div>
       <button
         class="btn btn-primary w-full uppercase font-variant-caps-[small-caps] flex gap-1 justify-center items-center"
-        // onClick={onExportRequest}
+        onClick={onExportRequest}
         disabled={waiting()}
       >
         {userFeedback[status()]}

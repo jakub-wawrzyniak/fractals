@@ -3,7 +3,7 @@ import { createEffect, onMount } from "solid-js";
 import { Tile, removeUnusedTiles, sortTiles, tilesOnScreen } from "./tiles";
 import { state } from "./state";
 import { attachInputHandlers } from "./handlers";
-import { store } from "../shared";
+import { saveViewerScreenSize, store } from "../shared";
 import { Task } from "./utils";
 
 const trackFractalConfig = () => {
@@ -37,6 +37,7 @@ export const FractalViewer = () => {
     if (state.shouldDraw()) stopTicker.cancel();
     else stopTicker.schedule();
 
+    saveViewerScreenSize(app.view);
     state.applyScheduledChange(elapsedFrames);
     const time = performance.now();
     const tiles = tilesOnScreen(app.view);

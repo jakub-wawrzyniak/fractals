@@ -1,16 +1,11 @@
-import {
-  DEFAULT_ASPECT_RATIO,
-  FRACTAL_CONFIG,
-  FRACTALS,
-  Fractal,
-} from "./constants";
+import { FRACTAL_CONFIG, FRACTALS, Fractal } from "./constants";
 import { createStore } from "solid-js/store";
-import { clip } from "./utils";
+import { isSizeSame } from "./utils";
 import { batch } from "solid-js";
-import { Complex, Point } from "./types";
+import { Complex, Point, Size } from "./types";
 
 type AppStore = {
-  viewerAspectRatio: number;
+  viewer: Size;
   fractal: {
     color: string;
     maxIterations: number;
@@ -45,7 +40,11 @@ const initConstant = (variant: Fractal) => {
 
 const initFractal = FRACTALS[0];
 const initStore: AppStore = {
-  viewerAspectRatio: DEFAULT_ASPECT_RATIO, // this will be overwritten onMount
+  viewer: {
+    // this will be overwritten almost instantly
+    width: 800,
+    height: 600,
+  },
   fractal: {
     color: "#ff0000",
     maxIterations: 128,
@@ -75,50 +74,19 @@ const initStore: AppStore = {
 const [store, setStore] = createStore(initStore);
 export { store };
 
-type Bounds = {
-  range: number;
-  min: number;
-  max: number;
-};
-
 export const fractalConfig = () => FRACTAL_CONFIG[store.fractal.variant];
-export const imaginaryBounds = (): Bounds => {
-  const range = fractalConfig().allowedRangeInComplex / store.viewerAspectRatio;
-  return {
-    range,
-    min: -range / 2,
-    max: range / 2,
-  };
-};
-
-export const realBounds = (): Bounds => {
-  const range = fractalConfig().allowedRangeInComplex;
-  return {
-    range,
-    min: -range / 2,
-    max: range / 2,
-  };
-};
 
 export const setConstantImaginary = (value: number) => {
-  const { min, max } = imaginaryBounds();
-  setStore("fractal", "constant", "imaginary", clip(min, max, value));
+  setStore("fractal", "constant", "imaginary", value);
 };
 
 export const setConstantReal = (value: number) => {
-  const { min, max } = realBounds();
-  setStore("fractal", "constant", "real", clip(min, max, value));
+  setStore("fractal", "constant", "real", value);
 };
 
-export const setViewerAspectRatio = (ratio: number) => {
-  batch(() => {
-    setStore("viewerAspectRatio", ratio);
-    if (store.fractal.constant !== null) {
-      setConstantImaginary(store.fractal.constant.imaginary);
-      // ^imaginary constant might go out of bounds on aspectRatio
-      // change, must revalidate
-    }
-  });
+export const saveViewerScreenSize = (screen: Size) => {
+  if (isSizeSame(screen, store.viewer)) return;
+  setStore("viewer", screen);
 };
 
 export const changeFractalVariant = (variant: Fractal) => {
@@ -158,13 +126,17 @@ export const setMaxIterations = (value: number) => {
   setStore("fractal", "maxIterations", value);
 };
 
+export const viewerAspectRatio = () => {
+  return store.viewer.width / store.viewer.height;
+};
+
 export const exportAspectRatio = () => {
   const exportScreen = store.export.source === "screen";
-  if (exportScreen) return store.viewerAspectRatio;
+  if (exportScreen) return viewerAspectRatio();
   const { abs } = Math;
   const { end, start } = store.export.selection;
   const width = abs(end.x - start.x);
-  const height = abs(end.y - start.y) / store.viewerAspectRatio;
+  const height = abs(end.y - start.y) / viewerAspectRatio();
   return width / height;
 };
 

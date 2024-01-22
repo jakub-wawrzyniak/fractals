@@ -3,8 +3,6 @@ import { Show } from "solid-js";
 import {
   fractalConfig,
   getConstantOrThrow as constant,
-  imaginaryBounds,
-  realBounds,
   setConstantImaginary,
   setConstantReal,
   setMaxIterations,
@@ -17,6 +15,10 @@ import { FractalColorPicker } from "./FractalColorPicker";
 import { InputNumber } from "./InputNumber";
 
 export const Sidebar = () => {
+  const BOUNDS = {
+    max: 5,
+    min: -5,
+  };
   return (
     <aside class="w-[20vw] min-w-[350px] px-6 py-8 flex flex-col gap-2">
       <FractalSelectVariant />
@@ -25,16 +27,16 @@ export const Sidebar = () => {
         <InputRange
           getNumber={() => constant("InputNumber").real}
           setNumber={setConstantReal}
-          max={realBounds().max}
-          min={realBounds().min}
+          max={BOUNDS.max}
+          min={BOUNDS.min}
           label="C: real component"
           class="range-primary"
         />
         <InputRange
           getNumber={() => constant("InputNumber").imaginary}
           setNumber={setConstantImaginary}
-          max={imaginaryBounds().max}
-          min={imaginaryBounds().min}
+          max={BOUNDS.max}
+          min={BOUNDS.min}
           label="C: imaginary component"
           class="range-primary"
           unit="i"

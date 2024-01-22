@@ -1,13 +1,8 @@
 import { Application, Sprite, Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
 import { Complex, Point, Size } from "../shared";
-import {
-  TILE_SIZE_PX,
-  state,
-  Bounds,
-  complexToViewport,
-  screenBounds,
-} from "./state";
+import { TILE_SIZE_PX, state, Bounds } from "./state";
+import { complexToViewport, screenBoundsComplex } from "./utils";
 const { max, log2, ceil, floor } = Math;
 
 export class Tile extends Sprite {
@@ -67,7 +62,7 @@ export class Tile extends Sprite {
   }
 
   isOnScreen(app: Size): boolean {
-    const screen = screenBounds(app);
+    const screen = screenBoundsComplex(app);
     const tile = this.bounds();
     if (tile.right < screen.left) return false;
     if (tile.left > screen.right) return false;
