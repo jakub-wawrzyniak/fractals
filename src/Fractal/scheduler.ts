@@ -1,7 +1,8 @@
 import { Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
-import { TILE_SIZE_PX } from "./state";
+import { TILE_SIZE_PX, state } from "./state";
 import type { Tile } from "./tiles";
+import { distanceManhatan } from "./utils";
 
 export const OUT_OF_SCREEN = "outOfScreen";
 class RenderJob {
@@ -22,7 +23,7 @@ class RenderJob {
     });
   }
 
-  request(): FractalFragment {
+  private request(): FractalFragment {
     const bounds = this.tile.bounds();
     return {
       width_px: TILE_SIZE_PX,
@@ -63,22 +64,39 @@ class RenderScheduler {
   private running: RenderJob | null = null;
   private queue = new Map<number, RenderJob[]>();
 
-  popMostImportantJob(): RenderJob | null {
+  private popJobClosestToCenter(queue: RenderJob[]): RenderJob {
+    let closestId = 0;
+    let closestDistance = Infinity;
+    let center = state.current.center;
+    for (let id = 0; id < queue.length; id++) {
+      const position = queue[id].tile.center();
+      const distance = distanceManhatan(position, center);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestId = 0;
+      }
+    }
+
+    const job = queue[closestId];
+    queue.splice(closestId, 1);
+    return job;
+  }
+
+  private popMostImportantJob(): RenderJob | null {
     let highestLevel = -Infinity;
     for (const level of this.queue.keys()) {
       highestLevel = Math.max(highestLevel, level);
     }
 
     const queue = this.queue.get(highestLevel);
-    const job = queue?.pop();
-    console.assert(!job || job.status === "waiting");
-    if (queue?.length === 0) this.queue.delete(highestLevel);
+    if (queue === undefined) return null;
+    const job = this.popJobClosestToCenter(queue);
+    if (queue.length === 0) this.queue.delete(highestLevel);
     return job ?? null;
   }
 
   runNextJob() {
     if (this.running?.status === "rendering") return;
-    console.assert(this.running === null || this.running.status === "done");
     this.running = this.popMostImportantJob();
     this.running?.run();
   }

@@ -62,6 +62,14 @@ export class Tile extends Sprite {
     };
   }
 
+  center(): Complex {
+    const sizeComplex = 2 ** this.level;
+    return {
+      real: (this.point.x + 0.5) * sizeComplex,
+      imaginary: (this.point.y + 0.5) * sizeComplex,
+    };
+  }
+
   /**
    * Gets a tile, which is one level above this one.
    * Since tiles one level up are 4x larger, parent
