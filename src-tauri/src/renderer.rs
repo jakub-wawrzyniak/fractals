@@ -123,6 +123,16 @@ where
         // Some chunks are mutch faster to compute than others, if we
         // make more threads than CPU cores, the load will average out
     }
+
+    pub fn render_for_ui(self) -> ImageBuffer<GetPixel::Pixel> {
+        let chunks = thread::available_parallelism()
+            .unwrap_or(NonZeroUsize::MIN)
+            .get()
+            - 1; // Spare one thread for UI (app stutters otherwise)
+        self.delegate_and_run(chunks.max(1) as u32)
+        // TODO: Since regular splitting will be suboptimal here,
+        // maybe implement a smarter algorithm to divide the work?
+    }
 }
 
 pub fn take_and_flip<Px: image::Pixel<Subpixel = u8>>(buffer: ImageBuffer<Px>) -> Vec<u8> {

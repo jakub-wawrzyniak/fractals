@@ -69,13 +69,13 @@ impl TileRequest {
                 pixel_creator,
                 fractal: FractalMandelbrot { max_iterations },
             })
-            .render(),
+            .render_for_ui(),
             BurningShip => (FractalImage {
                 fragment,
                 pixel_creator,
                 fractal: FractalBurningShip { max_iterations },
             })
-            .render(),
+            .render_for_ui(),
             JuliaSet => (FractalImage {
                 fragment,
                 pixel_creator,
@@ -84,13 +84,13 @@ impl TileRequest {
                     constant: self.fractal.constant.unwrap().into(),
                 },
             })
-            .render(),
+            .render_for_ui(),
             Newton => (FractalImage {
                 fragment,
                 pixel_creator,
                 fractal: FractalNewton { max_iterations },
             })
-            .render(),
+            .render_for_ui(),
         }
     }
 }

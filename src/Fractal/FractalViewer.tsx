@@ -5,6 +5,7 @@ import { state } from "./state";
 import { attachInputHandlers } from "./handlers";
 import { saveViewerScreenSize, store } from "../shared";
 import { Task } from "./utils";
+import { renderScheduler } from "./scheduler";
 
 const trackFractalConfig = () => {
   store.fractal.color;
@@ -45,6 +46,8 @@ export const FractalViewer = () => {
     Tile.deleteStaleCache(time);
     removeUnusedTiles(app, time);
     sortTiles(app);
+    renderScheduler.cancelStaleJobs(time);
+    renderScheduler.runNextJob();
   });
 
   onMount(() => {

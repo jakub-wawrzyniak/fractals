@@ -1,8 +1,8 @@
-import { Application, Sprite, Texture } from "pixi.js";
-import { FractalFragment, calcTile } from "../api";
+import { Application, Sprite } from "pixi.js";
 import { Complex, Point, Size } from "../shared";
 import { TILE_SIZE_PX, state, Bounds } from "./state";
 import { complexToViewport, screenBoundsComplex } from "./utils";
+import { OUT_OF_SCREEN, renderScheduler } from "./scheduler";
 const { max, log2, ceil, floor } = Math;
 
 export class Tile extends Sprite {
@@ -41,6 +41,7 @@ export class Tile extends Sprite {
 
   static deleteStaleCache(frameTimestamp: number) {
     if (!state.isCacheStale) return;
+    renderScheduler.cancelRunningJob();
     for (const tile of Tile.cache.values()) {
       if (tile.lastDrawnAt !== frameTimestamp) {
         Tile.cache.delete(tile.hash);
@@ -71,34 +72,31 @@ export class Tile extends Sprite {
     return true;
   }
 
-  loadAction() {
+  private loadAction() {
     if (this.status === "empty") return "loading";
     if (state.isCacheStale) return "updating";
     return "skip";
   }
 
-  async load() {
-    const action = this.loadAction();
-    if (action === "skip") return;
-    const bounds = this.bounds();
-    const request: FractalFragment = {
-      width_px: TILE_SIZE_PX,
-      height_px: TILE_SIZE_PX,
-      top_left: {
-        real: bounds.left,
-        imaginary: bounds.top,
-      },
-      bottom_right: {
-        real: bounds.right,
-        imaginary: bounds.bottom,
-      },
+  load() {
+    const newAction = this.loadAction();
+    if (newAction === "skip") return;
+
+    this.status = newAction;
+    const update = async () => {
+      this.texture = await renderScheduler.schedule(this);
+      this.status = "ready";
+      state.onTileLoaded();
     };
 
-    this.status = action;
-    const dataUrl = await calcTile(request);
-    this.texture = Texture.from(dataUrl);
-    this.status = "ready";
-    state.onTileLoaded();
+    update().catch((err) => {
+      if (err !== OUT_OF_SCREEN) throw err;
+      update().catch((err) => {
+        if (err !== OUT_OF_SCREEN) throw err;
+        Tile.cache.delete(this.hash);
+        // after the second attempt, destroy this instance
+      });
+    });
   }
 
   canBeDrawn() {
@@ -106,6 +104,7 @@ export class Tile extends Sprite {
   }
 
   draw(app: Application, timestamp: number) {
+    this.lastDrawnAt = timestamp;
     this.load();
     if (!this.canBeDrawn()) return;
     const { left: real, bottom: imaginary } = this.bounds();
@@ -117,7 +116,6 @@ export class Tile extends Sprite {
     this.scale = { x: scale, y: scale };
     this.x = positionViewport.x;
     this.y = positionViewport.y;
-    this.lastDrawnAt = timestamp;
   }
 }
 
