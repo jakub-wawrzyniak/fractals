@@ -146,60 +146,11 @@ function levelsOnScreen(screen: Size) {
   return max(maxLevel, 1);
 }
 
-export function tileWithPoint(level: number, point: Complex): Tile {
+function tileWithPoint(level: number, point: Complex): Tile {
   const size = 2 ** level;
   const x = floor(point.real / size);
   const y = floor(point.imaginary / size);
   return Tile.get(x, y, level);
-}
-
-export function tileNeighbours(tile: Tile, distance: number) {
-  if (distance === 0) return [];
-
-  const positions: Point[] = [];
-  for (let d = -distance; d <= distance; d++) {
-    positions.push({ x: d, y: distance });
-    positions.push({ x: d, y: -distance });
-  }
-  for (let d = 1 - distance; d < distance; d++) {
-    positions.push({ x: distance, y: d });
-    positions.push({ x: -distance, y: d });
-  }
-  return positions.map((pos) => {
-    const x = tile.point.x + pos.x;
-    const y = tile.point.y + pos.y;
-    return Tile.get(x, y, tile.level);
-  });
-}
-
-export function tilesOnScreen(screen: Size) {
-  const minLevel = floor(state.current.level);
-  const maxLevel = minLevel + levelsOnScreen(screen);
-  const tiles: Tile[] = [];
-  for (let level = maxLevel; level >= minLevel; level--) {
-    const tile = tileWithPoint(level, state.current.center);
-    tiles.push(tile);
-    let distance = 1;
-    while (true) {
-      const neighbours = tileNeighbours(tile, distance);
-      const onScreen = neighbours.filter((t) => t.isOnScreen(screen));
-      if (onScreen.length === 0) break;
-      tiles.push(...onScreen);
-      distance++;
-    }
-  }
-  return tiles;
-}
-
-/**
- * {@link drawScreen} is more stable, but this one is faster.
- * Might be usefull later */
-function drawScreenLegacy(app: Application, frameTimestamp: number) {
-  const tiles = tilesOnScreen(app.view);
-  for (const tile of tiles) {
-    if (tile.canBeDrawn()) tile.draw(app, frameTimestamp);
-    else tile.load(frameTimestamp);
-  }
 }
 
 function tilesOnScreenAt(level: number, screen: Size) {
