@@ -86,7 +86,10 @@ export const setConstantReal = (value: number) => {
 
 export const saveViewerScreenSize = (screen: Size) => {
   if (isSizeSame(screen, store.viewer)) return;
-  setStore("viewer", screen);
+  setTimeout(() => setStore("viewer", screen), 0);
+  // This fn is called in fractal viewer's render loop (for now).
+  // Since Solid.js renders synchronously after updates, its better
+  // to schedule the update to be finished later
 };
 
 export const changeFractalVariant = (variant: Fractal) => {

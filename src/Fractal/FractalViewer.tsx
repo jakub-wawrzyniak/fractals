@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { createEffect, onMount } from "solid-js";
-import { Tile, removeUnusedTiles, sortTiles, tilesOnScreen } from "./tiles";
+import { Tile, drawScreen, removeUnusedTiles, sortTiles } from "./tiles";
 import { state } from "./state";
 import { attachInputHandlers } from "./handlers";
 import { saveViewerScreenSize, store } from "../shared";
@@ -16,9 +16,7 @@ const trackFractalConfig = () => {
 };
 
 export const FractalViewer = () => {
-  const root = (
-    <div class="min-h-screen relative h-0 bg-red-600" />
-  ) as HTMLDivElement;
+  const root = (<div class="min-h-screen relative h-0" />) as HTMLDivElement;
 
   const app = new PIXI.Application({
     background: "#111",
@@ -41,8 +39,7 @@ export const FractalViewer = () => {
     saveViewerScreenSize(app.view);
     state.applyScheduledChange(elapsedFrames);
     const time = performance.now();
-    const tiles = tilesOnScreen(app.view);
-    for (const tile of tiles) tile.draw(app, time);
+    drawScreen(app, time);
     Tile.deleteStaleCache(time);
     removeUnusedTiles(app, time);
     sortTiles(app);

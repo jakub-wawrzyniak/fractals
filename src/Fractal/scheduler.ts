@@ -88,7 +88,6 @@ class RenderScheduler {
     const queueForLevel = this.queue.get(tile.level) ?? [];
     queueForLevel.push(job);
     this.queue.set(tile.level, queueForLevel);
-    // TODO: Sanity check, to see if no requests are being scheduled twice
     return job.promise;
   }
 
@@ -96,7 +95,7 @@ class RenderScheduler {
     for (const [level, levelQueue] of this.queue.entries()) {
       for (let id = 0; id < levelQueue.length; ) {
         const job = levelQueue[id];
-        const isNeeded = job.tile.lastDrawnAt === frameTimestamp;
+        const isNeeded = job.tile.lastUsedAt === frameTimestamp;
         if (isNeeded) id++;
         else {
           job.cancel();
