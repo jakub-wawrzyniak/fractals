@@ -1,7 +1,8 @@
-import { Application, FederatedPointerEvent } from "pixi.js";
+import { FederatedPointerEvent } from "pixi.js";
 import { Point } from "../shared";
 import { Position, state } from "./state";
 import { pixelToComplex } from "./utils";
+import { FractalApp } from "./types";
 
 function getMousePosition(e: FederatedPointerEvent): Point {
   return {
@@ -10,7 +11,7 @@ function getMousePosition(e: FederatedPointerEvent): Point {
   };
 }
 
-export function attachInputHandlers(app: Application) {
+export function attachInputHandlers(app: FractalApp) {
   let dragStartedAt: Point | null = null;
   app.stage.eventMode = "static";
   app.stage.on("mouseup", () => (dragStartedAt = null));

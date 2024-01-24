@@ -1,8 +1,9 @@
-import { Application, Sprite } from "pixi.js";
+import { Sprite } from "pixi.js";
 import { Complex, Point, Size } from "../shared";
 import { TILE_SIZE_PX, state, Bounds } from "./state";
 import { complexToViewport, screenBoundsComplex } from "./utils";
 import { OUT_OF_SCREEN, renderScheduler } from "./scheduler";
+import { FractalApp } from "./types";
 const { max, log2, ceil, floor, abs } = Math;
 
 export class Tile extends Sprite {
@@ -124,11 +125,14 @@ export class Tile extends Sprite {
     return this.status === "ready" || this.status === "updating";
   }
 
-  draw(app: Application, frameTimestamp: number) {
+  draw(app: FractalApp, frameTimestamp: number) {
     this.load(frameTimestamp); // can be drawn without awaiting
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
-    const positionViewport = complexToViewport(positionComplex, app.view);
+    const positionViewport = complexToViewport(
+      positionComplex,
+      app.renderer.view
+    );
     const notInStage = app.stage.getChildByName(this.hash) === null;
     if (notInStage) app.stage.addChild(this);
     const scale = 2 ** (this.level - state.current.level);
@@ -180,13 +184,13 @@ function tilesOnScreenAt(level: number, screen: Size) {
   return tilesOnScreen;
 }
 
-export function drawScreen(app: Application, frameTimestamp: number) {
+export function drawScreen(app: FractalApp, frameTimestamp: number) {
   const minLevel = floor(state.current.level);
   // ^first level, that has higher resolution than the screen
   const maxFetchLevel = minLevel + levelsOnScreen(screen);
   // ^first level, that could have one tile covering the whole screen
   const maxFallbackLevel = maxFetchLevel + 5;
-  const tilesWithBestResolution = tilesOnScreenAt(minLevel, app.view);
+  const tilesWithBestResolution = tilesOnScreenAt(minLevel, app.renderer.view);
   const gapsCanBeFilledWith = new Set(tilesWithBestResolution);
 
   for (
@@ -208,7 +212,7 @@ export function drawScreen(app: Application, frameTimestamp: number) {
   }
 }
 
-export function sortTiles(app: Application) {
+export function sortTiles(app: FractalApp) {
   app.stage.children.sort((first, second) => {
     // Duck typing. I don't want unnessesary ifs in the rendering loop.
     try {
@@ -219,7 +223,7 @@ export function sortTiles(app: Application) {
   });
 }
 
-export function removeUnusedTiles(app: Application, now: number) {
+export function removeUnusedTiles(app: FractalApp, now: number) {
   let index = 0;
   while (index < app.stage.children.length) {
     const tile = app.stage.children[index] as Tile;

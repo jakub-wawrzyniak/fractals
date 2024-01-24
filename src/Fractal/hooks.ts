@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
+import { Size } from "../shared";
 
 type DebounceArgs<T> = {
   delayMs: number;
@@ -11,9 +12,7 @@ export const useDebounced = <Data>({
 }: DebounceArgs<Data>) => {
   const [current, setCurrent] = createSignal(initValue);
   const [debounced, setDebounced] = createSignal(initValue);
-  const isChanging = () => {
-    return current() !== debounced();
-  };
+  const isChanging = () => current() !== debounced();
 
   let timer = -1;
   const clear = () => clearTimeout(timer);
@@ -33,16 +32,18 @@ export const useDebounced = <Data>({
   };
 };
 
-export const useAspectRatio = (element: HTMLElement | null) => {
-  const { update, ...info } = useDebounced({
+export const useSize = (element: HTMLElement | null) => {
+  const { update, ...info } = useDebounced<Size>({
     delayMs: 300,
-    initValue: 1,
+    initValue: {
+      width: 300,
+      height: 200,
+    },
   });
 
   const observer = new ResizeObserver((entries) => {
-    const { height, width } = entries[0].contentRect;
-    const aspectRatio = width / height;
-    update(aspectRatio);
+    const size = entries[0].contentRect;
+    update(size);
   });
 
   onMount(() => {
