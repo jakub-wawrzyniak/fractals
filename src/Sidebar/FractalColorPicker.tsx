@@ -1,4 +1,4 @@
-import { setFractalColor, store } from "../shared";
+import { store } from "../store";
 
 export const FractalColorPicker = () => {
   return (
@@ -7,14 +7,14 @@ export const FractalColorPicker = () => {
         Pick a color
         <div
           class="h-4 w-4 rounded-full"
-          style={{ "background-color": store.fractal.color }}
+          style={{ "background-color": store.fractal.get.color }}
         />
       </div>
       <input
         type="color"
         class="absolute right-96 invisible -z-10"
-        value={store.fractal.color}
-        onInput={(e) => setFractalColor(e.target.value)}
+        value={store.fractal.get.color}
+        onInput={(e) => store.fractal.set("color", e.target.value)}
       />
     </label>
   );

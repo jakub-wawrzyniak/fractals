@@ -68,10 +68,3 @@ export function viewportToComplex(position: Point, screen: Size): Complex {
     imaginary: center.imaginary - change.y * pixelRatio,
   };
 }
-
-const { abs } = Math;
-export function distanceManhatan(point1: Complex, point2: Complex) {
-  const realDistance = abs(point1.real - point2.real);
-  const imaginaryDistance = abs(point1.imaginary - point2.imaginary);
-  return realDistance + imaginaryDistance;
-}

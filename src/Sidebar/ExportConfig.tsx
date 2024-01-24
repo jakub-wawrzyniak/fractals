@@ -1,9 +1,11 @@
 import { Show } from "solid-js";
 import { onExportRequest } from "../api";
-import { store, setExportSource, HasChild } from "../shared";
+import { HasChild } from "../shared";
 import { ExportSizePicker } from "./ExportSizePicker";
+import { AppStore, store } from "../store";
 
-const userFeedback: Record<typeof store.export.status, string> = {
+type Status = AppStore["export"]["status"];
+const userFeedback: Record<Status, string> = {
   done: "Export finished",
   errorBadFileType: "Error: bad file type",
   errorUnknown: "Unknown error :(",
@@ -17,9 +19,9 @@ const ButtonExportSource = (props: ExportSource) => {
   return (
     <button
       class="btn btn-primary flex-1"
-      onClick={() => setExportSource(props.exportFrom)}
+      onClick={() => store.exportConfig.set("source", props.exportFrom)}
       classList={{
-        "btn-outline": props.exportFrom !== store.export.source,
+        "btn-outline": props.exportFrom !== store.exportConfig.get.source,
       }}
     >
       {props.children}
@@ -28,7 +30,7 @@ const ButtonExportSource = (props: ExportSource) => {
 };
 
 export const ExportConfig = () => {
-  const status = () => store.export.status;
+  const status = () => store.exportConfig.get.status;
   const waiting = () => {
     return status() === "exporting" || status() === "pickingFilePath";
   };

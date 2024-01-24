@@ -1,10 +1,13 @@
-import { store } from "../shared";
-import { FractalConfig } from "./types";
+import { store } from "../store";
+import { CalcTileRequest } from "./types";
 
-export const getFractalConfig = (): FractalConfig => {
-  const { maxIterations, ...config } = store.fractal;
+export const getFractalConfig = (): Omit<CalcTileRequest, "fragment"> => {
+  const { maxIterations, color, ...config } = store.fractal.get;
   return {
-    ...config,
-    max_iterations: maxIterations,
+    color,
+    fractal: {
+      ...config,
+      max_iterations: maxIterations,
+    },
   };
 };

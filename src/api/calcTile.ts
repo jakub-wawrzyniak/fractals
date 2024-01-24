@@ -1,13 +1,11 @@
 import { invoke } from "@tauri-apps/api";
+import { FractalFragment, CalcTileRequest } from "./types";
 import { getFractalConfig } from "./utils";
-import { FractalFragment, FullCalcTileRequest } from "./types";
-import { store } from "../shared";
 
 export const calcTile = async (req: FractalFragment): Promise<string> => {
-  const request: FullCalcTileRequest = {
+  const request: CalcTileRequest = {
     fragment: req,
-    fractal: getFractalConfig(),
-    color: store.fractal.color,
+    ...getFractalConfig(),
   };
 
   return await invoke<string>("calc_tile", { request });

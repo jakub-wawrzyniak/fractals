@@ -1,4 +1,4 @@
-import { Size } from ".";
+import { Complex, Size } from "./types";
 
 export const clip = (
   lowBound: number,
@@ -18,3 +18,10 @@ export const assert = (condition: boolean, where: string, what: string) => {
 export const isSizeSame = (size1: Size, size2: Size) => {
   return size1.height === size2.height && size1.width === size2.height;
 };
+
+const { abs } = Math;
+export function distanceManhatan(point1: Complex, point2: Complex) {
+  const realDistance = abs(point1.real - point2.real);
+  const imaginaryDistance = abs(point1.imaginary - point2.imaginary);
+  return realDistance + imaginaryDistance;
+}

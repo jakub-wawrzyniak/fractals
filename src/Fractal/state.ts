@@ -1,5 +1,6 @@
 import { Ticker } from "pixi.js";
-import { Complex, fractalConfig } from "../shared";
+import { Complex } from "../shared";
+import { store } from "../store";
 
 export class Position {
   center: Complex;
@@ -50,7 +51,7 @@ function easeOut(x: number): number {
 }
 
 function initPosition() {
-  const center = fractalConfig().offsetGraphInComplex;
+  const center = store.fractal.getConfig().offsetGraphInComplex;
   return new Position(center.real, center.imaginary, 1);
 }
 

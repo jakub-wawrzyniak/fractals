@@ -1,17 +1,13 @@
-import {
-  FRACTAL_CONFIG,
-  FRACTALS,
-  changeFractalVariant,
-  fractalConfig,
-} from "../shared";
+import { FRACTAL_CONFIG, FRACTALS } from "../shared";
 import { Arrow } from "../shared/icons";
+import { store } from "../store";
 
 export const FractalSelectVariant = () => {
   return (
     <div class="dropdown dropdown-bottom w-full">
       <button class="btn btn-ghost w-full flex gap-2 justify-center items-center p-2 group relative font-normal">
         <h3 class="font-poppins font-regular text-center text-2xl">
-          {fractalConfig().name}
+          {store.fractal.getConfig().name}
         </h3>
         <Arrow class="absolute right-2 top-1/2 -translate-y-1/2 transition-transform group-focus:rotate-180" />
       </button>
@@ -24,7 +20,7 @@ export const FractalSelectVariant = () => {
             <button
               class="w-full p-2"
               onClick={() => {
-                changeFractalVariant(variant);
+                store.fractal.set("variant", variant);
                 (document.activeElement as HTMLButtonElement | null)?.blur();
               }}
             >

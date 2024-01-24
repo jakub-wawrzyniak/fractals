@@ -2,7 +2,7 @@ import { Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
 import { TILE_SIZE_PX, state } from "./state";
 import type { Tile } from "./tiles";
-import { distanceManhatan } from "./utils";
+import { distanceManhatan } from "../shared";
 
 export const OUT_OF_SCREEN = "outOfScreen";
 class RenderJob {

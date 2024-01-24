@@ -13,13 +13,12 @@ export type FractalConfig = {
   constant: Complex | null;
 };
 
-export type FullCalcTileRequest = {
+export type CalcTileRequest = {
   fragment: FractalFragment;
   fractal: FractalConfig;
   color: string;
 };
 
-export type ExportFractalRequest = FullCalcTileRequest & {
-  color: string;
+export type ExportFractalRequest = CalcTileRequest & {
   filepath: string;
 };

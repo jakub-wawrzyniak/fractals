@@ -4,17 +4,17 @@ import { Show, createEffect, onMount } from "solid-js";
 import { Tile, drawScreen, removeUnusedTiles, sortTiles } from "./tiles";
 import { state } from "./state";
 import { attachInputHandlers } from "./handlers";
-import { saveViewerScreenSize, store } from "../shared";
+import { store } from "../store";
 import { renderScheduler } from "./scheduler";
 import { FractalApp } from "./types";
 import { useSize } from "./hooks";
 
 const trackFractalConfig = () => {
-  store.fractal.color;
-  store.fractal.variant;
-  store.fractal.constant?.imaginary;
-  store.fractal.constant?.real;
-  store.fractal.maxIterations;
+  store.fractal.get.color;
+  store.fractal.get.variant;
+  store.fractal.get.constant?.imaginary;
+  store.fractal.get.constant?.real;
+  store.fractal.get.maxIterations;
 };
 
 export const Fractal = () => {
@@ -42,7 +42,6 @@ export const Fractal = () => {
     if (deltaTime > 1000) deltaTime = 1000;
     const deltaFrame = (deltaTime * 60) / 1000;
 
-    saveViewerScreenSize(app.renderer.view);
     state.applyScheduledChange(deltaFrame);
     drawScreen(app, drawingAt);
     Tile.deleteStaleCache(drawingAt);
@@ -56,7 +55,9 @@ export const Fractal = () => {
   }
 
   createEffect(() => {
-    const { height, width } = size.debounced();
+    const newSize = size.debounced();
+    const { height, width } = newSize;
+    store.viewer.setSize(newSize);
     app.renderer.resize(width, height);
   });
 
@@ -68,7 +69,7 @@ export const Fractal = () => {
   });
 
   let initialLoad = true;
-  let lastVariant = store.fractal.variant;
+  let lastVariant = store.fractal.get.variant;
   createEffect(() => {
     trackFractalConfig();
     if (initialLoad) {
@@ -76,7 +77,7 @@ export const Fractal = () => {
       return;
     }
 
-    const variant = store.fractal.variant;
+    const variant = store.fractal.get.variant;
     if (variant === lastVariant) state.onCacheInvalid();
     else {
       state.onFractalChange();
