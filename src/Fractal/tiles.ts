@@ -4,6 +4,7 @@ import { TILE_SIZE_PX, state, Bounds } from "./state";
 import { complexToViewport, screenBoundsComplex } from "./utils";
 import { OUT_OF_SCREEN, renderScheduler } from "./scheduler";
 import { FractalApp } from "./types";
+import { ticker } from "./ticker";
 const { max, log2, ceil, floor, abs } = Math;
 
 export class Tile extends Sprite {
@@ -40,11 +41,11 @@ export class Tile extends Sprite {
     return newTile;
   }
 
-  static deleteStaleCache(frameTimestamp: number) {
+  static deleteStaleCache() {
     if (!state.isCacheStale) return;
     renderScheduler.cancelRunningJob();
     for (const tile of Tile.cache.values()) {
-      if (tile.lastUsedAt !== frameTimestamp) {
+      if (tile.lastUsedAt !== ticker.drawingAt) {
         Tile.cache.delete(tile.hash);
       }
     }
@@ -99,8 +100,8 @@ export class Tile extends Sprite {
     return "skip";
   }
 
-  load(frameTimestamp: number) {
-    this.lastUsedAt = frameTimestamp;
+  load() {
+    this.lastUsedAt = ticker.drawingAt;
     const newAction = this.loadAction();
     if (newAction === "skip") return;
 
@@ -125,8 +126,8 @@ export class Tile extends Sprite {
     return this.status === "ready" || this.status === "updating";
   }
 
-  draw(app: FractalApp, frameTimestamp: number) {
-    this.load(frameTimestamp); // can be drawn without awaiting
+  draw(app: FractalApp) {
+    this.load(); // can be drawn without awaiting
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
     const positionViewport = complexToViewport(
@@ -184,7 +185,7 @@ function tilesOnScreenAt(level: number, screen: Size) {
   return tilesOnScreen;
 }
 
-export function drawScreen(app: FractalApp, frameTimestamp: number) {
+export function drawScreen(app: FractalApp) {
   const minLevel = floor(state.current.level);
   // ^first level, that has higher resolution than the screen
   const maxFetchLevel = minLevel + levelsOnScreen(screen);
@@ -203,10 +204,10 @@ export function drawScreen(app: FractalApp, frameTimestamp: number) {
     gapsCanBeFilledWith.clear();
     for (const tile of tilesToDraw) {
       if (tile.canBeDrawn()) {
-        tile.draw(app, frameTimestamp);
+        tile.draw(app);
         continue;
       }
-      if (fetchMissingTiles) tile.load(frameTimestamp);
+      if (fetchMissingTiles) tile.load();
       gapsCanBeFilledWith.add(tile.tileParent());
     }
   }
@@ -223,11 +224,11 @@ export function sortTiles(app: FractalApp) {
   });
 }
 
-export function removeUnusedTiles(app: FractalApp, now: number) {
+export function removeUnusedTiles(app: FractalApp) {
   let index = 0;
   while (index < app.stage.children.length) {
     const tile = app.stage.children[index] as Tile;
-    const isUsed = tile.lastUsedAt === now;
+    const isUsed = tile.lastUsedAt === ticker.drawingAt;
     if (!isUsed) app.stage.removeChildAt(index);
     else index++;
   }

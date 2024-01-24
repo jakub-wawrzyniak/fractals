@@ -8,6 +8,7 @@ import { store } from "../store";
 import { renderScheduler } from "./scheduler";
 import { FractalApp } from "./types";
 import { useSize } from "./hooks";
+import { ticker } from "./ticker.js";
 
 const trackFractalConfig = () => {
   store.fractal.get.color;
@@ -32,22 +33,15 @@ export const Fractal = () => {
     }),
   };
 
-  let lastDrawnAt = performance.now();
   requestAnimationFrame(loop);
   function loop() {
-    const drawingAt = performance.now();
-    var deltaTime = drawingAt - lastDrawnAt;
-    lastDrawnAt = drawingAt;
-    if (deltaTime < 0) deltaTime = 0;
-    if (deltaTime > 1000) deltaTime = 1000;
-    const deltaFrame = (deltaTime * 60) / 1000;
-
-    state.applyScheduledChange(deltaFrame);
-    drawScreen(app, drawingAt);
-    Tile.deleteStaleCache(drawingAt);
-    removeUnusedTiles(app, drawingAt);
+    ticker.tick();
+    state.applyScheduledChange();
+    drawScreen(app);
+    Tile.deleteStaleCache();
+    removeUnusedTiles(app);
     sortTiles(app);
-    renderScheduler.cancelStaleJobs(drawingAt);
+    renderScheduler.cancelStaleJobs();
     renderScheduler.runNextJob();
 
     app.renderer.render(app.stage);

@@ -1,6 +1,7 @@
 import { Ticker } from "pixi.js";
 import { Complex } from "../shared";
 import { store } from "../store";
+import { ticker } from "./ticker";
 
 export class Position {
   center: Complex;
@@ -109,12 +110,12 @@ class ViewerState {
     return inTransition || drawsNewTiles || this.isCacheStale;
   }
 
-  applyScheduledChange(elapsedFrames: number) {
+  applyScheduledChange() {
     if (this.progress === 1) return;
 
     const PROGRESS_EVERY_FRAME = 0.01;
     const before = this.progress;
-    const after = before + PROGRESS_EVERY_FRAME * elapsedFrames;
+    const after = before + PROGRESS_EVERY_FRAME * ticker.elapsedFrames;
 
     const reachesTarget = after > 1;
     if (reachesTarget) {

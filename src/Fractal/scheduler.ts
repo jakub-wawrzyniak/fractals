@@ -3,6 +3,7 @@ import { FractalFragment, calcTile } from "../api";
 import { TILE_SIZE_PX, state } from "./state";
 import type { Tile } from "./tiles";
 import { distanceManhatan } from "../shared";
+import { ticker } from "./ticker";
 
 export const OUT_OF_SCREEN = "outOfScreen";
 class RenderJob {
@@ -109,11 +110,11 @@ class RenderScheduler {
     return job.promise;
   }
 
-  cancelStaleJobs(frameTimestamp: number) {
+  cancelStaleJobs() {
     for (const [level, levelQueue] of this.queue.entries()) {
       for (let id = 0; id < levelQueue.length; ) {
         const job = levelQueue[id];
-        const isNeeded = job.tile.lastUsedAt === frameTimestamp;
+        const isNeeded = job.tile.lastUsedAt === ticker.drawingAt;
         if (isNeeded) id++;
         else {
           job.cancel();
