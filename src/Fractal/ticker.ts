@@ -11,9 +11,7 @@ export class Ticker {
   }
 
   tick() {
-    this.running = true;
     this.updateRequested = false;
-
     this.frameTimestamp = performance.now();
     let deltaTime = this.frameTimestamp - this.lastDrawnAt;
 
@@ -28,10 +26,6 @@ export class Ticker {
   }
 
   stop() {
-    console.assert(
-      !this.updateRequested,
-      "Render stopped, despite having updates to do"
-    );
     this.running = false;
   }
 
@@ -39,6 +33,9 @@ export class Ticker {
     this.updateRequested = true;
     if (this.running) return;
     this.running = true;
+    this.lastDrawnAt = performance.now() - 16;
+    // ^pretend the last frame finished 16ms ago.
+    // prevents sudden animation jumps
     this.startRendering();
   }
 }
