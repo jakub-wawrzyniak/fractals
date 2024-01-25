@@ -3,6 +3,7 @@ import { ScreenPosition } from "./screenPosition";
 import { Point } from "../shared";
 import { Position } from "./position";
 import { ScreenRenderer } from "./renderer";
+import type { Tile } from "./tile";
 
 const getMousePosition = (e: FederatedPointerEvent) => ({
   x: e.clientX,
@@ -50,5 +51,21 @@ export class Stage extends Container {
   private onWheelSpin(e: FederatedWheelEvent) {
     const levelChange = e.deltaY / 200;
     this.screen.changeGoingToBy(new Position(0, 0, levelChange));
+  }
+
+  removeUnusedTiles(timestamp: number) {
+    let index = 0;
+    while (index < this.children.length) {
+      const tile = this.children[index] as Tile;
+      const isUsed = tile.lastUsedAt === timestamp;
+      if (!isUsed) this.removeChildAt(index);
+      else index++;
+    }
+  }
+
+  sortTiles() {
+    this.children.sort((first, second) => {
+      return (second as Tile).level - (first as Tile).level;
+    });
   }
 }

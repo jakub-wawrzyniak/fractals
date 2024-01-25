@@ -30,8 +30,8 @@ export class FractalApp {
         this.renderer
       );
       frame.drawTiles();
-      frame.removeUnusedTiles();
-      frame.sortTiles();
+      this.stage.removeUnusedTiles(timestamp);
+      this.stage.sortTiles();
 
       if (this.configInLastRender !== this.configCurrent) {
         Tile.deleteStaleCache(timestamp, this.configCurrent);

@@ -117,20 +117,4 @@ export class Frame {
       }
     }
   }
-
-  sortTiles() {
-    this.stage.children.sort((first, second) => {
-      return (second as Tile).level - (first as Tile).level;
-    });
-  }
-
-  removeUnusedTiles() {
-    let index = 0;
-    while (index < this.stage.children.length) {
-      const tile = this.stage.children[index] as Tile;
-      const isUsed = tile.lastUsedAt === this.timestamp;
-      if (!isUsed) this.stage.removeChildAt(index);
-      else index++;
-    }
-  }
 }
