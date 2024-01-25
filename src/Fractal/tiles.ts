@@ -1,19 +1,16 @@
 import { Sprite } from "pixi.js";
-import { Complex, Point, Size } from "../shared";
-import { TILE_SIZE_PX, state, Bounds } from "./state";
-import { complexToViewport, screenBoundsComplex } from "./utils";
-import { OUT_OF_SCREEN, renderScheduler } from "./scheduler";
-import { FractalApp } from "./types";
-import { ticker } from "./ticker";
-const { max, log2, ceil, floor, abs } = Math;
+import { Complex, Point } from "../shared";
+import { Bounds, ScreenPosition } from "./screenPosition";
 
+const { floor } = Math;
 export class Tile extends Sprite {
   private static cache = new Map<string, Tile>();
-  private status: "ready" | "empty" | "loading" | "updating" = "empty";
+  status: "ready" | "empty" | "loading" | "updating" = "empty";
   lastUsedAt = -1;
-  hash: string;
-  level: number;
-  point: Point;
+  renderedForConfig: string = "";
+  readonly hash: string;
+  readonly level: number;
+  readonly point: Point;
 
   private constructor(x: number, y: number, level: number, hash: string) {
     super();
@@ -41,15 +38,19 @@ export class Tile extends Sprite {
     return newTile;
   }
 
-  static deleteStaleCache() {
-    if (!state.isCacheStale) return;
-    renderScheduler.cancelRunningJob();
+  static deleteStaleCache(frameTimestamp: number, config: string) {
     for (const tile of Tile.cache.values()) {
-      if (tile.lastUsedAt !== ticker.drawingAt) {
-        Tile.cache.delete(tile.hash);
-      }
+      const notUsed = tile.lastUsedAt !== frameTimestamp;
+      const stale = tile.renderedForConfig !== config;
+      if (notUsed && stale) tile.destroy();
     }
-    state.isCacheStale = false;
+  }
+
+  static withPoint(level: number, point: Complex): Tile {
+    const size = 2 ** level;
+    const x = floor(point.real / size);
+    const y = floor(point.imaginary / size);
+    return Tile.get(x, y, level);
   }
 
   bounds(): Bounds {
@@ -84,152 +85,23 @@ export class Tile extends Sprite {
     return Tile.get(x, y, level);
   }
 
-  isOnScreen(app: Size): boolean {
-    const screen = screenBoundsComplex(app);
-    const tile = this.bounds();
-    if (tile.right < screen.left) return false;
-    if (tile.left > screen.right) return false;
-    if (tile.top < screen.bottom) return false;
-    if (tile.bottom > screen.top) return false;
-    return true;
-  }
-
-  private loadAction() {
-    if (this.status === "empty") return "loading";
-    if (state.isCacheStale) return "updating";
-    return "skip";
-  }
-
-  load() {
-    this.lastUsedAt = ticker.drawingAt;
-    const newAction = this.loadAction();
-    if (newAction === "skip") return;
-
-    this.status = newAction;
-    const update = async () => {
-      this.texture = await renderScheduler.schedule(this);
-      this.status = "ready";
-      state.onTileLoaded();
-    };
-
-    update().catch((err) => {
-      if (err !== OUT_OF_SCREEN) throw err;
-      update().catch((err) => {
-        if (err !== OUT_OF_SCREEN) throw err;
-        Tile.cache.delete(this.hash);
-        // after the second attempt, destroy this instance
-      });
-    });
+  destroy(): void {
+    this.status = "empty";
+    this.texture.destroy();
+    Tile.cache.delete(this.hash);
   }
 
   canBeDrawn() {
     return this.status === "ready" || this.status === "updating";
   }
 
-  draw(app: FractalApp) {
-    this.load(); // can be drawn without awaiting
+  updatePositionOn(screen: ScreenPosition) {
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
-    const positionViewport = complexToViewport(
-      positionComplex,
-      app.renderer.view
-    );
-    const notInStage = app.stage.getChildByName(this.hash) === null;
-    if (notInStage) app.stage.addChild(this);
-    const scale = 2 ** (this.level - state.current.level);
+    const positionViewport = screen.complexToViewport(positionComplex);
+    const scale = 2 ** (this.level - screen.current.level);
     this.scale = { x: scale, y: scale };
     this.x = positionViewport.x;
     this.y = positionViewport.y;
-  }
-}
-
-const LOG2_TILE_SIZE = log2(TILE_SIZE_PX);
-function levelsOnScreen(screen: Size) {
-  const { width, height } = screen;
-  const size = max(height, width);
-  const maxLevel = ceil(log2(size)) - LOG2_TILE_SIZE;
-  return max(maxLevel, 1);
-}
-
-function tileWithPoint(level: number, point: Complex): Tile {
-  const size = 2 ** level;
-  const x = floor(point.real / size);
-  const y = floor(point.imaginary / size);
-  return Tile.get(x, y, level);
-}
-
-function tilesOnScreenAt(level: number, screen: Size) {
-  const screenBounds = screenBoundsComplex(screen);
-  const topLeft = tileWithPoint(level, {
-    real: screenBounds.left,
-    imaginary: screenBounds.top,
-  });
-  const bottomRight = tileWithPoint(level, {
-    real: screenBounds.right,
-    imaginary: screenBounds.bottom,
-  });
-
-  const tilesHorizontally = abs(bottomRight.point.x - topLeft.point.x) + 1;
-  const tilesVertically = abs(bottomRight.point.y - topLeft.point.y) + 1;
-  const tilesOnScreen: Tile[] = [];
-  for (let dx = 0; dx < tilesHorizontally; dx++) {
-    for (let dy = 0; dy < tilesVertically; dy++) {
-      const x = topLeft.point.x + dx;
-      const y = topLeft.point.y - dy;
-      const tile = Tile.get(x, y, level);
-      tilesOnScreen.push(tile);
-      console.assert(tile.isOnScreen(screen));
-    }
-  }
-
-  return tilesOnScreen;
-}
-
-export function drawScreen(app: FractalApp) {
-  const minLevel = floor(state.current.level);
-  // ^first level, that has higher resolution than the screen
-  const maxFetchLevel = minLevel + levelsOnScreen(screen);
-  // ^first level, that could have one tile covering the whole screen
-  const maxFallbackLevel = maxFetchLevel + 5;
-  const tilesWithBestResolution = tilesOnScreenAt(minLevel, app.renderer.view);
-  const gapsCanBeFilledWith = new Set(tilesWithBestResolution);
-
-  for (
-    let level = minLevel;
-    level <= maxFallbackLevel && gapsCanBeFilledWith.size > 0;
-    level++
-  ) {
-    const tilesToDraw = [...gapsCanBeFilledWith.values()];
-    const fetchMissingTiles = level < maxFetchLevel;
-    gapsCanBeFilledWith.clear();
-    for (const tile of tilesToDraw) {
-      if (tile.canBeDrawn()) {
-        tile.draw(app);
-        continue;
-      }
-      if (fetchMissingTiles) tile.load();
-      gapsCanBeFilledWith.add(tile.tileParent());
-    }
-  }
-}
-
-export function sortTiles(app: FractalApp) {
-  app.stage.children.sort((first, second) => {
-    // Duck typing. I don't want unnessesary ifs in the rendering loop.
-    try {
-      return (second as Tile).level - (first as Tile).level;
-    } catch {
-      return 0;
-    }
-  });
-}
-
-export function removeUnusedTiles(app: FractalApp) {
-  let index = 0;
-  while (index < app.stage.children.length) {
-    const tile = app.stage.children[index] as Tile;
-    const isUsed = tile.lastUsedAt === ticker.drawingAt;
-    if (!isUsed) app.stage.removeChildAt(index);
-    else index++;
   }
 }

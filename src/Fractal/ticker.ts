@@ -1,4 +1,4 @@
-class Ticker {
+export class Ticker {
   private lastDrawnAt = 0;
   elapsedFrames = 0;
   drawingAt = 0;
@@ -13,5 +13,3 @@ class Ticker {
     this.lastDrawnAt = this.drawingAt;
   }
 }
-
-export const ticker = new Ticker();

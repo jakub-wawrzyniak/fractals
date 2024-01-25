@@ -1,21 +1,26 @@
 import { Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
-import { TILE_SIZE_PX, state } from "./state";
+import { TILE_SIZE_PX, distanceManhatan } from "../shared";
 import type { Tile } from "./tiles";
-import { distanceManhatan } from "../shared";
-import { ticker } from "./ticker";
+import type { ScreenPosition } from "./screenPosition";
+import { store } from "../store";
 
-export const OUT_OF_SCREEN = "outOfScreen";
+export type RenderError = "configOutdated" | "outOfScreen";
+export type RednerResult = {
+  texture: Texture;
+  renderedForConfig: string;
+};
+
 class RenderJob {
   tile: Tile;
-  promise: Promise<Texture>;
+  promise: Promise<RednerResult>;
   status: "waiting" | "rendering" | "done" | "canceled" = "waiting";
-  private onResolve?: (rendered: Texture) => void;
-  private onReject?: (error: typeof OUT_OF_SCREEN) => void;
+  private onResolve?: (rendered: RednerResult) => void;
+  private onReject?: (error: RenderError) => void;
 
   constructor(tile: Tile, onFinished: () => void) {
     this.tile = tile;
-    this.promise = new Promise<Texture>((res, rej) => {
+    this.promise = new Promise<RednerResult>((res, rej) => {
       this.onReject = rej;
       this.onResolve = (tile) => {
         onFinished();
@@ -42,33 +47,45 @@ class RenderJob {
 
   async run() {
     this.status = "rendering";
+    const hash = store.fractal.getHash();
     const dataUrl = await calcTile(this.request());
     if ((this.status as string) === "canceled") return;
     // ^Requests can be canceled while being rendered
 
-    const texture = Texture.from(dataUrl);
     if (this.onResolve === undefined)
       throw "Can't resolve a promise that was not awaited";
-    this.onResolve(texture);
+    this.onResolve({
+      texture: Texture.from(dataUrl),
+      renderedForConfig: hash,
+    });
     this.status = "done";
   }
 
-  cancel() {
+  cancel(reason: RenderError) {
     if (this.onReject === undefined)
       throw "Can't reject a promise that was not awaited";
-    this.onReject(OUT_OF_SCREEN);
+    this.onReject(reason);
     this.status = "canceled";
   }
 }
 
-class RenderScheduler {
+export class RenderScheduler {
   private running: RenderJob | null = null;
   private queue = new Map<number, RenderJob[]>();
+  private screen: ScreenPosition;
+  private onJobFinished: () => void;
+  constructor(screen: ScreenPosition, onNewTilesReady: () => void) {
+    this.screen = screen;
+    this.onJobFinished = () => {
+      this.runNextJob();
+      onNewTilesReady();
+    };
+  }
 
   private popJobClosestToCenter(queue: RenderJob[]): RenderJob {
     let closestId = 0;
     let closestDistance = Infinity;
-    let center = state.current.center;
+    let center = this.screen.current.center;
     for (let id = 0; id < queue.length; id++) {
       const position = queue[id].tile.center();
       const distance = distanceManhatan(position, center);
@@ -102,22 +119,22 @@ class RenderScheduler {
     this.running?.run();
   }
 
-  schedule(tile: Tile): Promise<Texture> {
-    const job = new RenderJob(tile, () => this.runNextJob());
+  schedule(tile: Tile): Promise<RednerResult> {
+    const job = new RenderJob(tile, () => this.onJobFinished());
     const queueForLevel = this.queue.get(tile.level) ?? [];
     queueForLevel.push(job);
     this.queue.set(tile.level, queueForLevel);
     return job.promise;
   }
 
-  cancelStaleJobs() {
+  cancelStaleJobs(frameTimestamp: number) {
     for (const [level, levelQueue] of this.queue.entries()) {
       for (let id = 0; id < levelQueue.length; ) {
         const job = levelQueue[id];
-        const isNeeded = job.tile.lastUsedAt === ticker.drawingAt;
+        const isNeeded = job.tile.lastUsedAt === frameTimestamp;
         if (isNeeded) id++;
         else {
-          job.cancel();
+          job.cancel("outOfScreen");
           levelQueue.splice(id, 1);
         }
       }
@@ -127,9 +144,7 @@ class RenderScheduler {
   }
 
   cancelRunningJob() {
-    this.running?.cancel();
+    this.running?.cancel("configOutdated");
     this.running = null;
   }
 }
-
-export const renderScheduler = new RenderScheduler();
