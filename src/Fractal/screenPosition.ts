@@ -61,18 +61,6 @@ export class ScreenPosition {
     return tileSizeComplex / TILE_SIZE_PX;
   }
 
-  screenBoundsComplex(): Bounds {
-    const pixelRatio = this.pixelToComplex();
-    const widthComplex = this.size.width * pixelRatio;
-    const heightComplex = this.size.height * pixelRatio;
-    return {
-      top: this.current.center.imaginary + heightComplex * 0.5,
-      bottom: this.current.center.imaginary - heightComplex * 0.5,
-      left: this.current.center.real - widthComplex * 0.5,
-      right: this.current.center.real + widthComplex * 0.5,
-    };
-  }
-
   complexToViewport(position: Complex): Point {
     const pixelRatio = 1 / this.pixelToComplex();
     const distance: Complex = {
@@ -96,6 +84,20 @@ export class ScreenPosition {
     return {
       real: this.current.center.real + change.x * pixelRatio,
       imaginary: this.current.center.imaginary - change.y * pixelRatio,
+    };
+  }
+
+  screenBoundsComplex(): Bounds {
+    const topLeft = this.viewportToComplex({ x: 0, y: 0 });
+    const bottomRight = this.viewportToComplex({
+      x: this.size.width,
+      y: this.size.height,
+    });
+    return {
+      left: topLeft.real,
+      top: topLeft.imaginary,
+      right: bottomRight.real,
+      bottom: bottomRight.imaginary,
     };
   }
 
