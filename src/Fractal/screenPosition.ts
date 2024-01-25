@@ -48,7 +48,7 @@ export class ScreenPosition {
     this.ticker.start();
   }
 
-  setGoingTo(vector: Position) {
+  changeGoingToBy(vector: Position) {
     this.goingFrom = this.current.clone();
     this.goingTo.changeBy(vector);
     const isInTarget = this.current.equals(this.goingTo);

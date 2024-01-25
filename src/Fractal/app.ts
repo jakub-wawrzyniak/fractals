@@ -1,20 +1,15 @@
-import {
-  Container,
-  FederatedPointerEvent as PointerEvent,
-  Renderer,
-} from "pixi.js";
+import { Renderer } from "pixi.js";
+import { INIT_VIEWER_SIZE, Size } from "../shared";
 import { Ticker } from "./ticker";
 import { RenderScheduler } from "./scheduler";
 import { ScreenPosition } from "./screenPosition";
 import { Frame } from "./frame";
-import { INIT_VIEWER_SIZE, Point, Size } from "../shared";
-import { Position } from "./position";
 import { Tile } from "./tile";
+import { Stage } from "./stage";
 
 export class FractalApp {
   private configInLastRender = "";
   private configCurrent = "";
-  private stage = new Container();
   private renderer = new Renderer({
     background: "#111",
     ...INIT_VIEWER_SIZE,
@@ -23,38 +18,7 @@ export class FractalApp {
   private ticker = new Ticker(() => this.render());
   private screen = new ScreenPosition(this.renderer, this.ticker);
   private scheduler = new RenderScheduler(this.screen, this.ticker);
-
-  constructor() {
-    this.attachInputHandlers();
-  }
-
-  private attachInputHandlers() {
-    let dragStartedAt: Point | null = null;
-    const getMousePosition = (e: PointerEvent) => ({
-      x: e.clientX,
-      y: e.clientY,
-    });
-    this.stage.eventMode = "static";
-    this.stage.on("mouseup", () => (dragStartedAt = null));
-    this.stage.on("mousedown", (e) => {
-      dragStartedAt = getMousePosition(e);
-    });
-    this.stage.on("globalmousemove", (e) => {
-      const isPrimaryButtonPressed = e.buttons === 1;
-      if (!isPrimaryButtonPressed) return;
-      if (dragStartedAt === null) return;
-      const pixelRatio = this.screen.pixelToComplex();
-      const dragIsAt = getMousePosition(e);
-      const dx = -(dragIsAt.x - dragStartedAt.x) * pixelRatio;
-      const dy = (dragIsAt.y - dragStartedAt.y) * pixelRatio;
-      this.screen.setGoingTo(new Position(dx, dy, 0));
-      dragStartedAt = dragIsAt;
-    });
-    this.stage.on("wheel", (e) => {
-      const levelChange = e.deltaY / 200;
-      this.screen.setGoingTo(new Position(0, 0, levelChange));
-    });
-  }
+  private stage = new Stage(this.screen);
 
   private render() {
     requestAnimationFrame(() => {
