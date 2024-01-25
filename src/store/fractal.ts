@@ -31,7 +31,7 @@ const changeFractalVariant = (variant: Fractal) => {
   });
 };
 
-type DirectSetters = "color" | "maxIterations" | "variant";
+type DirectSetters = "color" | "maxIterations";
 const setFractal = <Key extends DirectSetters>(
   key: Key,
   value: AppStore["fractal"][Key]

@@ -20,7 +20,7 @@ export const FractalSelectVariant = () => {
             <button
               class="w-full p-2"
               onClick={() => {
-                store.fractal.set("variant", variant);
+                store.fractal.changeFractalVariant(variant);
                 (document.activeElement as HTMLButtonElement | null)?.blur();
               }}
             >
