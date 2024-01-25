@@ -39,3 +39,29 @@ export class Timer {
     this.tracker.add(elapsed);
   }
 }
+
+export class Counter {
+  private static map = new Map<string, Counter>();
+  private counter: number = 0;
+  private resetAt = performance.now();
+
+  constructor(name: string, reportEveryMs: number) {
+    if (Counter.map.has(name)) return;
+    Counter.map.set(name, this);
+    setInterval(() => {
+      const now = performance.now();
+      const count = this.counter;
+      const elapsed = now - this.resetAt;
+      const countPerSec = (count * 1000) / elapsed;
+      if (countPerSec >= 1) {
+        console.log(`${name}: ${countPerSec.toFixed(0)} / sec`);
+      }
+      this.counter = 0;
+      this.resetAt = now;
+    }, reportEveryMs);
+  }
+
+  addOne() {
+    this.counter += 1;
+  }
+}

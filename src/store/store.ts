@@ -1,11 +1,11 @@
 import { createStore } from "solid-js/store";
 import {
-  FRACTAL_CONFIG,
-  FRACTALS,
   Fractal,
   Complex,
   Point,
   Size,
+  INIT_FRACTAL,
+  FRACTAL_CONFIG,
 } from "../shared";
 
 export type AppStore = {
@@ -42,7 +42,6 @@ export const initConstant = (variant: Fractal) => {
   return { ...constant }; // deep copy, so that the default value will not be overwritten
 };
 
-const initFractal = FRACTALS[0];
 const initStore: AppStore = {
   viewer: {
     // this will be overwritten almost instantly
@@ -52,8 +51,8 @@ const initStore: AppStore = {
   fractal: {
     color: "#ff0000",
     maxIterations: 128,
-    variant: initFractal,
-    constant: initConstant(initFractal),
+    variant: INIT_FRACTAL,
+    constant: initConstant(INIT_FRACTAL),
   },
   export: {
     status: "idle",

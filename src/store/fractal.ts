@@ -10,6 +10,16 @@ const getConstantOrThrow = (where: string) => {
   return constant;
 };
 
+const getHash = () => {
+  const { color, variant, maxIterations, constant } = __store.fractal;
+  let hash = `${variant}@${maxIterations}iters?color=${color}`;
+  if (constant != null) {
+    const { real, imaginary } = constant;
+    hash += `&const=(${real}+${imaginary}i)`;
+  }
+  return hash;
+};
+
 const setConstant = (key: keyof Complex, value: number) => {
   __setStore("fractal", "constant", key, value);
 };
@@ -31,6 +41,7 @@ const setFractal = <Key extends DirectSetters>(
 
 export const fractal = {
   get: __store.fractal,
+  getHash,
   getConfig,
   getConstantOrThrow,
   changeFractalVariant,

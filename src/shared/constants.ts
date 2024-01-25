@@ -1,13 +1,19 @@
-import { Complex } from "./types";
+import { Complex, Size } from "./types";
 
+export const TILE_SIZE_PX = 512;
 export const FRACTALS = [
   "Mandelbrot",
   "JuliaSet",
   "BurningShip",
   "Newton",
 ] as const;
-export type Fractal = (typeof FRACTALS)[number];
+export const INIT_FRACTAL = FRACTALS[0];
+export const INIT_VIEWER_SIZE: Size = {
+  width: 800,
+  height: 600,
+};
 
+export type Fractal = (typeof FRACTALS)[number];
 type FractalConfig = {
   name: string;
   equation: string;
