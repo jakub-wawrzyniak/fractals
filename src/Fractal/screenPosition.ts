@@ -28,20 +28,16 @@ export type Bounds = {
 };
 
 export class ScreenPosition {
+  private readonly ticker: Ticker;
+  readonly size: Size;
   private goingFrom = initPosition(INIT_FRACTAL);
   private goingTo = initPosition(INIT_FRACTAL);
-  ticker: Ticker;
-  readonly size: Size;
+  private progress = 1;
   current = initPosition(INIT_FRACTAL);
-  progress = 1;
 
   constructor(renderer: Renderer, ticker: Ticker) {
     this.size = renderer.view;
     this.ticker = ticker;
-  }
-
-  get inTransition() {
-    return this.progress < 1;
   }
 
   jumpTo(target: Position) {
@@ -52,7 +48,7 @@ export class ScreenPosition {
     this.ticker.start();
   }
 
-  changeBy(vector: Position) {
+  setGoingTo(vector: Position) {
     this.goingFrom = this.current.clone();
     this.goingTo.changeBy(vector);
     const isInTarget = this.current.equals(this.goingTo);
@@ -106,10 +102,10 @@ export class ScreenPosition {
   applyScheduledChange() {
     if (this.progress === 1) return false;
 
-    const PROGRESS_EVERY_FRAME = 0.01;
-    const frames = this.ticker.elapsedFrames;
+    const PROGRESS_EVERY_MS = 0.0007;
+    const elapsedMs = this.ticker.sincePreviousFrame;
     const before = this.progress;
-    const after = before + PROGRESS_EVERY_FRAME * frames;
+    const after = before + PROGRESS_EVERY_MS * elapsedMs;
 
     const reachesTarget = after >= 1;
     if (reachesTarget) {

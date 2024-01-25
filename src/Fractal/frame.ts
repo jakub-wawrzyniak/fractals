@@ -1,7 +1,7 @@
 import { Container } from "pixi.js";
 import type { RenderScheduler } from "./scheduler";
 import type { ScreenPosition } from "./screenPosition";
-import { Tile } from "./tiles";
+import { Tile } from "./tile";
 import { TILE_SIZE_PX } from "../shared";
 
 const { max, log2, ceil, floor, abs } = Math;

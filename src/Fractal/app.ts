@@ -9,7 +9,7 @@ import { ScreenPosition } from "./screenPosition";
 import { Frame } from "./frame";
 import { INIT_VIEWER_SIZE, Point, Size } from "../shared";
 import { Position } from "./position";
-import { Tile } from "./tiles";
+import { Tile } from "./tile";
 
 export class FractalApp {
   private configInLastRender = "";
@@ -47,19 +47,20 @@ export class FractalApp {
       const dragIsAt = getMousePosition(e);
       const dx = -(dragIsAt.x - dragStartedAt.x) * pixelRatio;
       const dy = (dragIsAt.y - dragStartedAt.y) * pixelRatio;
-      this.screen.changeBy(new Position(dx, dy, 0));
+      this.screen.setGoingTo(new Position(dx, dy, 0));
       dragStartedAt = dragIsAt;
     });
     this.stage.on("wheel", (e) => {
       const levelChange = e.deltaY / 200;
-      this.screen.changeBy(new Position(0, 0, levelChange));
+      this.screen.setGoingTo(new Position(0, 0, levelChange));
     });
   }
 
   private render() {
     requestAnimationFrame(() => {
       this.ticker.tick();
-      const timestamp = this.ticker.frameTimestamp;
+      this.screen.applyScheduledChange();
+      const timestamp = this.ticker.drawingAt;
       const frame = new Frame(
         timestamp,
         this.configCurrent,
@@ -81,7 +82,6 @@ export class FractalApp {
       this.scheduler.runNextJob();
       this.renderer.render(this.stage);
 
-      this.screen.applyScheduledChange();
       if (this.ticker.canStop()) this.ticker.stop();
       else this.render();
     });

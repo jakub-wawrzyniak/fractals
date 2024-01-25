@@ -1,10 +1,10 @@
 export class Ticker {
+  private readonly startRendering: () => void;
+  private updateRequested = false;
+  private running = false;
   private lastDrawnAt = 0;
-  updateRequested = false;
-  private startRendering: () => void;
-  running = false;
-  elapsedFrames = 0;
-  frameTimestamp = 0;
+  drawingAt = 0;
+  sincePreviousFrame = 0;
 
   constructor(onStart: () => void) {
     this.startRendering = onStart;
@@ -12,13 +12,9 @@ export class Ticker {
 
   tick() {
     this.updateRequested = false;
-    this.frameTimestamp = performance.now();
-    let deltaTime = this.frameTimestamp - this.lastDrawnAt;
-
-    if (deltaTime < 0) deltaTime = 0;
-    if (deltaTime > 1000) deltaTime = 1000;
-    this.elapsedFrames = (deltaTime * 60) / 1000;
-    this.lastDrawnAt = this.frameTimestamp;
+    this.drawingAt = performance.now();
+    this.sincePreviousFrame = this.drawingAt - this.lastDrawnAt;
+    this.lastDrawnAt = this.drawingAt;
   }
 
   canStop() {
@@ -34,8 +30,8 @@ export class Ticker {
     if (this.running) return;
     this.running = true;
     this.lastDrawnAt = performance.now() - 16;
-    // ^pretend the last frame finished 16ms ago.
-    // prevents sudden animation jumps
+    // ^Pretend the last frame finished 16ms ago.
+    //  Prevents sudden animation jumps.
     this.startRendering();
   }
 }

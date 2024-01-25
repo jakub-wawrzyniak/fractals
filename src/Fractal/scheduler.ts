@@ -1,7 +1,7 @@
 import { Texture } from "pixi.js";
 import { FractalFragment, calcTile } from "../api";
 import { TILE_SIZE_PX, distanceManhatan } from "../shared";
-import type { Tile } from "./tiles";
+import type { Tile } from "./tile";
 import type { ScreenPosition } from "./screenPosition";
 import { store } from "../store";
 import { Ticker } from "./ticker";
@@ -127,7 +127,7 @@ export class RenderScheduler {
   }
 
   cancelStaleJobs() {
-    const thisFrame = this.ticker.frameTimestamp;
+    const thisFrame = this.ticker.drawingAt;
     for (const [level, levelQueue] of this.queue.entries()) {
       for (let id = 0; id < levelQueue.length; ) {
         const job = levelQueue[id];
