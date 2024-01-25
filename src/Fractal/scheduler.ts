@@ -4,6 +4,7 @@ import { TILE_SIZE_PX, distanceManhatan } from "../shared";
 import type { Tile } from "./tiles";
 import type { ScreenPosition } from "./screenPosition";
 import { store } from "../store";
+import { Ticker } from "./ticker";
 
 export type RenderError = "configOutdated" | "outOfScreen";
 export type RednerResult = {
@@ -18,14 +19,11 @@ class RenderJob {
   private onResolve?: (rendered: RednerResult) => void;
   private onReject?: (error: RenderError) => void;
 
-  constructor(tile: Tile, onFinished: () => void) {
+  constructor(tile: Tile) {
     this.tile = tile;
     this.promise = new Promise<RednerResult>((res, rej) => {
       this.onReject = rej;
-      this.onResolve = (tile) => {
-        onFinished();
-        res(tile);
-      };
+      this.onResolve = res;
     });
   }
 
@@ -70,16 +68,13 @@ class RenderJob {
 }
 
 export class RenderScheduler {
+  private readonly ticker: Ticker;
+  private readonly screen: ScreenPosition;
+  private readonly queue = new Map<number, RenderJob[]>();
   private running: RenderJob | null = null;
-  private queue = new Map<number, RenderJob[]>();
-  private screen: ScreenPosition;
-  private onJobFinished: () => void;
-  constructor(screen: ScreenPosition, onNewTilesReady: () => void) {
+  constructor(screen: ScreenPosition, ticker: Ticker) {
     this.screen = screen;
-    this.onJobFinished = () => {
-      this.runNextJob();
-      onNewTilesReady();
-    };
+    this.ticker = ticker;
   }
 
   private popJobClosestToCenter(queue: RenderJob[]): RenderJob {
@@ -113,25 +108,30 @@ export class RenderScheduler {
     return job ?? null;
   }
 
-  runNextJob() {
+  async runNextJob() {
     if (this.running?.status === "rendering") return;
-    this.running = this.popMostImportantJob();
-    this.running?.run();
+    while (true) {
+      this.running = this.popMostImportantJob();
+      if (this.running === null) return;
+      await this.running.run();
+      this.ticker.start();
+    }
   }
 
   schedule(tile: Tile): Promise<RednerResult> {
-    const job = new RenderJob(tile, () => this.onJobFinished());
+    const job = new RenderJob(tile);
     const queueForLevel = this.queue.get(tile.level) ?? [];
     queueForLevel.push(job);
     this.queue.set(tile.level, queueForLevel);
     return job.promise;
   }
 
-  cancelStaleJobs(frameTimestamp: number) {
+  cancelStaleJobs() {
+    const thisFrame = this.ticker.frameTimestamp;
     for (const [level, levelQueue] of this.queue.entries()) {
       for (let id = 0; id < levelQueue.length; ) {
         const job = levelQueue[id];
-        const isNeeded = job.tile.lastUsedAt === frameTimestamp;
+        const isNeeded = job.tile.lastUsedAt === thisFrame;
         if (isNeeded) id++;
         else {
           job.cancel("outOfScreen");

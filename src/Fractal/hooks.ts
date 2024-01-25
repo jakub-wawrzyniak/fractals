@@ -32,13 +32,10 @@ export const useDebounced = <Data>({
   };
 };
 
-export const useSize = (element: HTMLElement | null) => {
+export const useSize = (element: HTMLElement | null, initValue: Size) => {
   const { update, ...info } = useDebounced<Size>({
     delayMs: 300,
-    initValue: {
-      width: 300,
-      height: 200,
-    },
+    initValue: initValue,
   });
 
   const observer = new ResizeObserver((entries) => {

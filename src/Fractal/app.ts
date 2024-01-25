@@ -10,33 +10,19 @@ import { Frame } from "./frame";
 import { INIT_VIEWER_SIZE, Point, Size } from "../shared";
 import { Position } from "./position";
 import { Tile } from "./tiles";
-import { Counter } from "../api/timer";
-
-const update = new Counter("update", 1000);
-const scheduling = new Counter("scheduling", 1000);
-const scheduled = new Counter("scheduled", 1000);
 
 export class FractalApp {
-  private rendering = false;
-  private newTilesReady = false;
-  private screenSizeChanged = false;
-  private screenPositionChanged = false;
   private configInLastRender = "";
   private configCurrent = "";
-  private ticker = new Ticker();
   private stage = new Container();
   private renderer = new Renderer({
     background: "#111",
     ...INIT_VIEWER_SIZE,
   });
-  private screen = new ScreenPosition(this.renderer, () => {
-    this.screenPositionChanged = false;
-    this.scheduleRender();
-  });
-  private scheduler = new RenderScheduler(this.screen, () => {
-    this.newTilesReady = true;
-    this.scheduleRender();
-  });
+
+  private ticker = new Ticker(() => this.render());
+  private screen = new ScreenPosition(this.renderer, this.ticker);
+  private scheduler = new RenderScheduler(this.screen, this.ticker);
 
   constructor() {
     this.attachInputHandlers();
@@ -70,46 +56,35 @@ export class FractalApp {
     });
   }
 
-  private onRenderStarted() {
-    this.rendering = true;
-    this.ticker.tick();
-
-    this.newTilesReady = false;
-    this.screenSizeChanged = false;
-    this.screenPositionChanged = false;
-  }
-
-  private onRenderFinished() {
-    this.rendering = false;
-    const { elapsedFrames } = this.ticker;
-    this.screen.applyScheduledChange(elapsedFrames);
-  }
-
   private render() {
-    this.onRenderStarted();
-    const { drawingAt } = this.ticker;
+    requestAnimationFrame(() => {
+      this.ticker.tick();
+      const timestamp = this.ticker.frameTimestamp;
+      const frame = new Frame(
+        timestamp,
+        this.configCurrent,
+        this.screen,
+        this.stage,
+        this.scheduler
+      );
+      frame.drawTiles();
+      frame.removeUnusedTiles();
+      frame.sortTiles();
 
-    const frame = new Frame(
-      drawingAt,
-      this.configCurrent,
-      this.screen,
-      this.stage,
-      this.scheduler
-    );
-    frame.drawTiles();
-    frame.removeUnusedTiles();
-    frame.sortTiles();
+      if (this.configInLastRender !== this.configCurrent) {
+        Tile.deleteStaleCache(timestamp, this.configCurrent);
+        this.scheduler.cancelRunningJob();
+        this.configInLastRender = this.configCurrent;
+      }
 
-    if (this.configInLastRender !== this.configCurrent) {
-      Tile.deleteStaleCache(drawingAt, this.configCurrent);
-      this.scheduler.cancelRunningJob();
-      this.configInLastRender = this.configCurrent;
-    }
+      this.scheduler.cancelStaleJobs();
+      this.scheduler.runNextJob();
+      this.renderer.render(this.stage);
 
-    this.scheduler.cancelStaleJobs(drawingAt);
-    this.scheduler.runNextJob();
-    this.renderer.render(this.stage);
-    this.onRenderFinished();
+      this.screen.applyScheduledChange();
+      if (this.ticker.canStop()) this.ticker.stop();
+      else this.render();
+    });
   }
 
   resize({ width, height }: Size) {
@@ -117,29 +92,13 @@ export class FractalApp {
     let noChange = old.width === width && old.height === height;
     if (noChange) return;
 
-    this.screenSizeChanged = true;
     this.renderer.resize(width, height);
-    this.scheduleRender();
+    this.ticker.start();
   }
 
   onConfigChanged(newConfig: string) {
     this.configCurrent = newConfig;
-    this.scheduleRender();
-  }
-
-  scheduleRender() {
-    update.addOne();
-    if (this.rendering) return;
-    scheduling.addOne();
-    let shouldRender = this.configCurrent !== this.configInLastRender;
-    shouldRender ||= this.newTilesReady;
-    shouldRender ||= this.screenSizeChanged;
-    shouldRender ||= this.screenPositionChanged;
-    shouldRender ||= this.screen.inTransition;
-    if (shouldRender) {
-      requestAnimationFrame(() => this.render());
-      scheduled.addOne();
-    }
+    this.ticker.start();
   }
 
   mountAt(root: HTMLDivElement) {

@@ -9,6 +9,7 @@ import {
 } from "../shared";
 import { Position } from "./position";
 import { Renderer } from "pixi.js";
+import { Ticker } from "./ticker";
 
 function easeOut(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
@@ -27,16 +28,16 @@ export type Bounds = {
 };
 
 export class ScreenPosition {
-  private progress = 1;
   private goingFrom = initPosition(INIT_FRACTAL);
   private goingTo = initPosition(INIT_FRACTAL);
-  private readonly onPositionChanged: () => void;
+  ticker: Ticker;
   readonly size: Size;
   current = initPosition(INIT_FRACTAL);
+  progress = 1;
 
-  constructor(renderer: Renderer, requestRender: () => void) {
+  constructor(renderer: Renderer, ticker: Ticker) {
     this.size = renderer.view;
-    this.onPositionChanged = requestRender;
+    this.ticker = ticker;
   }
 
   get inTransition() {
@@ -48,7 +49,7 @@ export class ScreenPosition {
     this.current = target.clone();
     this.goingFrom = target.clone();
     this.progress = 1;
-    this.onPositionChanged();
+    this.ticker.start();
   }
 
   changeBy(vector: Position) {
@@ -56,7 +57,7 @@ export class ScreenPosition {
     this.goingTo.changeBy(vector);
     const isInTarget = this.current.equals(this.goingTo);
     this.progress = isInTarget ? 1 : 0;
-    this.onPositionChanged();
+    this.ticker.start();
   }
 
   tileSizeComplex() {
@@ -105,12 +106,13 @@ export class ScreenPosition {
     };
   }
 
-  applyScheduledChange(frameTimestamp: number) {
-    if (this.progress === 1) return;
+  applyScheduledChange() {
+    if (this.progress === 1) return false;
 
     const PROGRESS_EVERY_FRAME = 0.01;
+    const frames = this.ticker.elapsedFrames;
     const before = this.progress;
-    const after = before + PROGRESS_EVERY_FRAME * frameTimestamp;
+    const after = before + PROGRESS_EVERY_FRAME * frames;
 
     const reachesTarget = after >= 1;
     if (reachesTarget) {
@@ -123,5 +125,6 @@ export class ScreenPosition {
     const travelsDistance = fullDistance.multiply(travelsPart);
     this.current.changeBy(travelsDistance);
     this.progress = after;
+    this.ticker.start();
   }
 }
