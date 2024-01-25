@@ -1,24 +1,21 @@
-import { Renderer } from "pixi.js";
-import { INIT_VIEWER_SIZE, Size } from "../shared";
+import { Size } from "../shared";
 import { Ticker } from "./ticker";
 import { RenderScheduler } from "./scheduler";
 import { ScreenPosition } from "./screenPosition";
 import { Frame } from "./frame";
 import { Tile } from "./tile";
+import { ScreenRenderer } from "./renderer";
 import { Stage } from "./stage";
 
 export class FractalApp {
   private configInLastRender = "";
   private configCurrent = "";
-  private renderer = new Renderer({
-    background: "#111",
-    ...INIT_VIEWER_SIZE,
-  });
 
   private ticker = new Ticker(() => this.render());
-  private screen = new ScreenPosition(this.renderer, this.ticker);
-  private scheduler = new RenderScheduler(this.screen, this.ticker);
-  private stage = new Stage(this.screen);
+  private screen = new ScreenPosition(this.ticker);
+  private renderer = new ScreenRenderer(this.screen);
+  private scheduler = new RenderScheduler(this.ticker, this.screen);
+  private stage = new Stage(this.screen, this.renderer);
 
   private render() {
     requestAnimationFrame(() => {
@@ -28,9 +25,9 @@ export class FractalApp {
       const frame = new Frame(
         timestamp,
         this.configCurrent,
-        this.screen,
         this.stage,
-        this.scheduler
+        this.scheduler,
+        this.renderer
       );
       frame.drawTiles();
       frame.removeUnusedTiles();
@@ -55,7 +52,6 @@ export class FractalApp {
     const old = this.renderer.view;
     let noChange = old.width === width && old.height === height;
     if (noChange) return;
-
     this.renderer.resize(width, height);
     this.ticker.start();
   }

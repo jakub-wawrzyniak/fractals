@@ -72,9 +72,9 @@ export class RenderScheduler {
   private readonly screen: ScreenPosition;
   private readonly queue = new Map<number, RenderJob[]>();
   private running: RenderJob | null = null;
-  constructor(screen: ScreenPosition, ticker: Ticker) {
-    this.screen = screen;
+  constructor(ticker: Ticker, screen: ScreenPosition) {
     this.ticker = ticker;
+    this.screen = screen;
   }
 
   private popJobClosestToCenter(queue: RenderJob[]): RenderJob {

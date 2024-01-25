@@ -1,6 +1,6 @@
 import { Sprite } from "pixi.js";
 import { Complex, Point } from "../shared";
-import { Bounds, ScreenPosition } from "./screenPosition";
+import type { ScreenRenderer, Bounds } from "./renderer";
 
 const { floor } = Math;
 export class Tile extends Sprite {
@@ -95,11 +95,11 @@ export class Tile extends Sprite {
     return this.status === "ready" || this.status === "updating";
   }
 
-  updatePositionOn(screen: ScreenPosition) {
+  updatePosition(renderer: ScreenRenderer) {
     const { left: real, bottom: imaginary } = this.bounds();
     const positionComplex = { real, imaginary };
-    const positionViewport = screen.complexToViewport(positionComplex);
-    const scale = 2 ** (this.level - screen.current.level);
+    const positionViewport = renderer.complexToViewport(positionComplex);
+    const scale = 2 ** (this.level - renderer.current.level);
     this.scale = { x: scale, y: scale };
     this.x = positionViewport.x;
     this.y = positionViewport.y;

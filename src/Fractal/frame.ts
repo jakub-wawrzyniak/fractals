@@ -1,8 +1,8 @@
-import { Container } from "pixi.js";
 import type { RenderScheduler } from "./scheduler";
-import type { ScreenPosition } from "./screenPosition";
 import { Tile } from "./tile";
 import { TILE_SIZE_PX } from "../shared";
+import { ScreenRenderer } from "./renderer";
+import { Stage } from "./stage";
 
 const { max, log2, ceil, floor, abs } = Math;
 const LOG2_TILE_SIZE = log2(TILE_SIZE_PX);
@@ -10,33 +10,32 @@ const LOG2_TILE_SIZE = log2(TILE_SIZE_PX);
 export class Frame {
   readonly timestamp: number;
   readonly configHash: string;
-  readonly screen: ScreenPosition;
-  stage: Container;
-  scheduler: RenderScheduler;
+  readonly stage: Stage;
+  readonly renderer: ScreenRenderer;
+  readonly scheduler: RenderScheduler;
 
   constructor(
     timestamp: number,
     configHash: string,
-    screen: ScreenPosition,
-    stage: Container,
-    scheduler: RenderScheduler
+    stage: Stage,
+    scheduler: RenderScheduler,
+    renderer: ScreenRenderer
   ) {
+    this.renderer = renderer;
     this.configHash = configHash;
-    this.screen = screen;
     this.timestamp = timestamp;
     this.stage = stage;
     this.scheduler = scheduler;
   }
 
   private levelsOnScreen() {
-    const { width, height } = this.screen.size;
-    const size = max(height, width);
+    const size = max(this.renderer.height, this.renderer.width);
     const maxLevel = ceil(log2(size)) - LOG2_TILE_SIZE;
     return max(maxLevel, 1);
   }
 
   private tilesOnScreenAt(level: number) {
-    const screenBounds = this.screen.screenBoundsComplex();
+    const screenBounds = this.renderer.screenBoundsComplex();
     const topLeft = Tile.withPoint(level, {
       real: screenBounds.left,
       imaginary: screenBounds.top,
@@ -89,13 +88,13 @@ export class Frame {
 
   drawTile(tile: Tile) {
     tile.lastUsedAt = this.timestamp;
-    tile.updatePositionOn(this.screen);
+    tile.updatePosition(this.renderer);
     const notInStage = this.stage.getChildByName(tile.hash) === null;
     if (notInStage) this.stage.addChild(tile);
   }
 
   drawTiles() {
-    const minLevel = floor(this.screen.current.level);
+    const minLevel = floor(this.renderer.current.level);
     // ^first level, that has higher resolution than the screen
     const maxFetchLevel = minLevel + this.levelsOnScreen();
     // ^first level, that could have one tile covering the whole screen

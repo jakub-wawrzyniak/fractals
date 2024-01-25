@@ -2,6 +2,7 @@ import { Container, FederatedPointerEvent, FederatedWheelEvent } from "pixi.js";
 import { ScreenPosition } from "./screenPosition";
 import { Point } from "../shared";
 import { Position } from "./position";
+import { ScreenRenderer } from "./renderer";
 
 const getMousePosition = (e: FederatedPointerEvent) => ({
   x: e.clientX,
@@ -10,10 +11,12 @@ const getMousePosition = (e: FederatedPointerEvent) => ({
 
 export class Stage extends Container {
   private readonly screen: ScreenPosition;
+  private readonly renderer: ScreenRenderer;
   private dragFrom: Point | null = null;
-  constructor(screen: ScreenPosition) {
+  constructor(screen: ScreenPosition, renderer: ScreenRenderer) {
     super();
     this.screen = screen;
+    this.renderer = renderer;
     this.eventMode = "static";
     this.on("wheel", (e) => this.onWheelSpin(e));
     this.on("mousedown", (e) => this.onMouseDown(e));
@@ -25,7 +28,7 @@ export class Stage extends Container {
     if (!isPrimaryButtonPressed) return;
     if (this.dragFrom === null) return;
 
-    const pixelRatio = this.screen.pixelToComplex();
+    const pixelRatio = this.renderer.pixelToComplex();
     const dragTo = getMousePosition(e);
     const dx = -(dragTo.x - this.dragFrom.x) * pixelRatio;
     const dy = (dragTo.y - this.dragFrom.y) * pixelRatio;

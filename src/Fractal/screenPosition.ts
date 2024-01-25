@@ -1,14 +1,5 @@
-import {
-  Complex,
-  Size,
-  Point,
-  Fractal,
-  FRACTAL_CONFIG,
-  INIT_FRACTAL,
-  TILE_SIZE_PX,
-} from "../shared";
+import { Fractal, FRACTAL_CONFIG, INIT_FRACTAL } from "../shared";
 import { Position } from "./position";
-import { Renderer } from "pixi.js";
 import { Ticker } from "./ticker";
 
 function easeOut(x: number): number {
@@ -20,23 +11,14 @@ export function initPosition(variant: Fractal): Position {
   return new Position(center.real, center.imaginary, 1);
 }
 
-export type Bounds = {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-};
-
 export class ScreenPosition {
   private readonly ticker: Ticker;
-  readonly size: Size;
   private goingFrom = initPosition(INIT_FRACTAL);
   private goingTo = initPosition(INIT_FRACTAL);
   private progress = 1;
   current = initPosition(INIT_FRACTAL);
 
-  constructor(renderer: Renderer, ticker: Ticker) {
-    this.size = renderer.view;
+  constructor(ticker: Ticker) {
     this.ticker = ticker;
   }
 
@@ -54,51 +36,6 @@ export class ScreenPosition {
     const isInTarget = this.current.equals(this.goingTo);
     this.progress = isInTarget ? 1 : 0;
     this.ticker.start();
-  }
-
-  pixelToComplex() {
-    const tileSizeComplex = 2 ** this.current.level;
-    return tileSizeComplex / TILE_SIZE_PX;
-  }
-
-  complexToViewport(position: Complex): Point {
-    const pixelRatio = 1 / this.pixelToComplex();
-    const distance: Complex = {
-      real: position.real - this.current.center.real,
-      imaginary: position.imaginary - this.current.center.imaginary,
-    };
-
-    return {
-      x: this.size.width * 0.5 + distance.real * pixelRatio,
-      y: this.size.height * 0.5 - distance.imaginary * pixelRatio,
-    };
-  }
-
-  viewportToComplex(position: Point): Complex {
-    const pixelRatio = this.pixelToComplex();
-    const change: Point = {
-      x: position.x - this.size.width * 0.5,
-      y: position.y - this.size.height * 0.5,
-    };
-
-    return {
-      real: this.current.center.real + change.x * pixelRatio,
-      imaginary: this.current.center.imaginary - change.y * pixelRatio,
-    };
-  }
-
-  screenBoundsComplex(): Bounds {
-    const topLeft = this.viewportToComplex({ x: 0, y: 0 });
-    const bottomRight = this.viewportToComplex({
-      x: this.size.width,
-      y: this.size.height,
-    });
-    return {
-      left: topLeft.real,
-      top: topLeft.imaginary,
-      right: bottomRight.real,
-      bottom: bottomRight.imaginary,
-    };
   }
 
   applyScheduledChange() {
