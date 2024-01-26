@@ -1,31 +1,31 @@
-import type { RenderScheduler } from "./scheduler";
+import type { RequestQueue } from "./scheduler";
 import { Tile } from "./tile";
 import { TILE_SIZE_PX } from "../shared";
-import { ScreenRenderer } from "./renderer";
+import { ScreenRenderer } from "./screenRenderer";
 import { Stage } from "./stage";
+import { Ticker } from "./ticker";
 
 const { max, log2, ceil, floor, abs } = Math;
 const LOG2_TILE_SIZE = log2(TILE_SIZE_PX);
 
-export class Frame {
-  readonly timestamp: number;
-  readonly configHash: string;
-  readonly stage: Stage;
-  readonly renderer: ScreenRenderer;
-  readonly scheduler: RenderScheduler;
+export class TileManager {
+  private readonly ticker: Ticker;
+  private readonly stage: Stage;
+  private readonly renderer: ScreenRenderer;
+  private readonly queue: RequestQueue;
+  private lastConfig = "";
+  private currentConfig = "";
 
   constructor(
-    timestamp: number,
-    configHash: string,
+    ticker: Ticker,
     stage: Stage,
-    scheduler: RenderScheduler,
+    queue: RequestQueue,
     renderer: ScreenRenderer
   ) {
+    this.ticker = ticker;
     this.renderer = renderer;
-    this.configHash = configHash;
-    this.timestamp = timestamp;
     this.stage = stage;
-    this.scheduler = scheduler;
+    this.queue = queue;
   }
 
   private levelsOnScreen() {
@@ -60,8 +60,8 @@ export class Frame {
     return tilesOnScreen;
   }
 
-  async loadTile(tile: Tile) {
-    tile.lastUsedAt = this.timestamp;
+  private async loadTile(tile: Tile) {
+    tile.lastUsedAt = this.ticker.drawingAt;
     switch (tile.status) {
       case "loading":
       case "updating":
@@ -70,12 +70,12 @@ export class Frame {
         tile.status = "loading";
         break;
       case "ready":
-        if (this.configHash === tile.renderedForConfig) return;
+        if (this.currentConfig === tile.renderedForConfig) return;
         else tile.status = "updating";
     }
 
     try {
-      const result = await this.scheduler.schedule(tile);
+      const result = await this.queue.schedule(tile);
       tile.status = "ready";
       tile.texture = result.texture;
       tile.renderedForConfig = result.renderedForConfig;
@@ -86,8 +86,8 @@ export class Frame {
     }
   }
 
-  drawTile(tile: Tile) {
-    tile.lastUsedAt = this.timestamp;
+  private drawTile(tile: Tile) {
+    tile.lastUsedAt = this.ticker.drawingAt;
     tile.updatePosition(this.renderer);
     const notInStage = this.stage.getChildByName(tile.hash) === null;
     if (notInStage) this.stage.addChild(tile);
@@ -116,5 +116,19 @@ export class Frame {
         else gapsCanBeFilledWith.add(tile.tileParent());
       }
     }
+  }
+
+  invalidateCache() {
+    if (this.lastConfig === this.currentConfig) return;
+    const timestamp = this.ticker.drawingAt;
+    Tile.deleteStaleCache(timestamp, this.currentConfig);
+    this.queue.cancelRunningJob();
+    this.lastConfig = this.currentConfig;
+  }
+
+  updateConfig(newConfig: string) {
+    if (this.currentConfig === newConfig) return;
+    this.currentConfig = newConfig;
+    this.ticker.start();
   }
 }

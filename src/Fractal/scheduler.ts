@@ -6,22 +6,22 @@ import type { ScreenPosition } from "./screenPosition";
 import { store } from "../store";
 import { Ticker } from "./ticker";
 
-export type RenderError = "configOutdated" | "outOfScreen";
-export type RednerResult = {
+export type RequestError = "configOutdated" | "outOfScreen";
+export type RequestResult = {
   texture: Texture;
   renderedForConfig: string;
 };
 
 class RenderJob {
   tile: Tile;
-  promise: Promise<RednerResult>;
+  promise: Promise<RequestResult>;
   status: "waiting" | "rendering" | "done" | "canceled" = "waiting";
-  private onResolve?: (rendered: RednerResult) => void;
-  private onReject?: (error: RenderError) => void;
+  private onResolve?: (rendered: RequestResult) => void;
+  private onReject?: (error: RequestError) => void;
 
   constructor(tile: Tile) {
     this.tile = tile;
-    this.promise = new Promise<RednerResult>((res, rej) => {
+    this.promise = new Promise<RequestResult>((res, rej) => {
       this.onReject = rej;
       this.onResolve = res;
     });
@@ -59,7 +59,7 @@ class RenderJob {
     this.status = "done";
   }
 
-  cancel(reason: RenderError) {
+  cancel(reason: RequestError) {
     if (this.onReject === undefined)
       throw "Can't reject a promise that was not awaited";
     this.onReject(reason);
@@ -67,7 +67,7 @@ class RenderJob {
   }
 }
 
-export class RenderScheduler {
+export class RequestQueue {
   private readonly ticker: Ticker;
   private readonly screen: ScreenPosition;
   private readonly queue = new Map<number, RenderJob[]>();
@@ -118,7 +118,7 @@ export class RenderScheduler {
     }
   }
 
-  schedule(tile: Tile): Promise<RednerResult> {
+  schedule(tile: Tile): Promise<RequestResult> {
     const job = new RenderJob(tile);
     const queueForLevel = this.queue.get(tile.level) ?? [];
     queueForLevel.push(job);

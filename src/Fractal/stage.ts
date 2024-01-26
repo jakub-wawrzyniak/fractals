@@ -2,7 +2,7 @@ import { Container, FederatedPointerEvent, FederatedWheelEvent } from "pixi.js";
 import { ScreenPosition } from "./screenPosition";
 import { Point } from "../shared";
 import { Position } from "./position";
-import { ScreenRenderer } from "./renderer";
+import { ScreenRenderer } from "./screenRenderer";
 import type { Tile } from "./tile";
 
 const getMousePosition = (e: FederatedPointerEvent) => ({

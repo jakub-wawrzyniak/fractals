@@ -1,30 +1,30 @@
-import { SelectFractalPart } from "./SelectFractalPart.jsx";
+import { SelectFractalPart } from "./SelectFractalPart";
 import { Show, createEffect, onMount } from "solid-js";
 import { store } from "../store";
 import { useSize } from "./hooks";
-import { FractalApp } from "./app.js";
-import { INIT_VIEWER_SIZE } from "../shared/constants.js";
+import { fractalApp } from "./fractalApp";
+import { INIT_VIEWER_SIZE } from "../shared/constants";
 
 export const Fractal = () => {
   const root = (
     <div class="min-h-screen relative h-0 overflow-hidden" />
   ) as HTMLDivElement;
   const size = useSize(root, INIT_VIEWER_SIZE);
-  const app = new FractalApp();
 
   createEffect(() => {
     const newSize = size.debounced();
     store.viewer.setSize(newSize);
-    app.resize(newSize);
+    fractalApp.resize(newSize);
   });
 
   onMount(() => {
-    app.mountAt(root);
+    fractalApp.mountAt(root);
   });
 
   createEffect(() => {
     const hash = store.fractal.getHash();
-    app.onConfigChanged(hash);
+    const variant = store.fractal.get.variant;
+    fractalApp.updateConfig(hash, variant);
   });
 
   return (

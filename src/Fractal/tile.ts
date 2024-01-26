@@ -1,6 +1,6 @@
 import { Sprite } from "pixi.js";
 import { Complex, Point } from "../shared";
-import type { ScreenRenderer, Bounds } from "./renderer";
+import type { ScreenRenderer, Bounds } from "./screenRenderer";
 
 const { floor } = Math;
 export class Tile extends Sprite {
@@ -87,7 +87,6 @@ export class Tile extends Sprite {
 
   destroy(): void {
     this.status = "empty";
-    this.texture.destroy();
     Tile.cache.delete(this.hash);
   }
 

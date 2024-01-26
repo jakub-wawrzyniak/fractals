@@ -13,33 +13,49 @@ export function initPosition(variant: Fractal): Position {
 
 export class ScreenPosition {
   private readonly ticker: Ticker;
-  private goingFrom = initPosition(INIT_FRACTAL);
-  private goingTo = initPosition(INIT_FRACTAL);
   private progress = 1;
-  current = initPosition(INIT_FRACTAL);
+  private variant: Fractal = INIT_FRACTAL;
+  private readonly goingFrom = initPosition(this.variant);
+  private readonly goingTo = initPosition(this.variant);
+  readonly current = initPosition(this.variant);
 
   constructor(ticker: Ticker) {
     this.ticker = ticker;
   }
 
-  jumpTo(target: Position) {
-    this.goingTo = target.clone();
-    this.current = target.clone();
-    this.goingFrom = target.clone();
-    this.progress = 1;
-    this.ticker.start();
-  }
-
-  changeGoingToBy(vector: Position) {
-    this.goingFrom = this.current.clone();
-    this.goingTo.changeBy(vector);
+  private resetTransition() {
+    this.goingFrom.changeTo(this.current);
     const isInTarget = this.current.equals(this.goingTo);
     this.progress = isInTarget ? 1 : 0;
     this.ticker.start();
   }
 
+  private jumpTo(target: Position) {
+    this.goingTo.changeTo(target);
+    this.goingFrom.changeTo(target);
+    this.current.changeTo(target);
+    this.progress = 1;
+    this.ticker.start();
+  }
+
+  changeGoingToBy(vector: Position) {
+    this.goingTo.changeBy(vector);
+    this.resetTransition();
+  }
+
+  setGoingTo(target: Position) {
+    this.goingTo.changeTo(target);
+    this.resetTransition();
+  }
+
+  onConfigChanged(newVariant: Fractal) {
+    if (newVariant === this.variant) return;
+    this.variant = newVariant;
+    this.setGoingTo(initPosition(newVariant));
+  }
+
   applyScheduledChange() {
-    if (this.progress === 1) return false;
+    if (this.progress === 1) return;
 
     const PROGRESS_EVERY_MS = 0.0007;
     const elapsedMs = this.ticker.sincePreviousFrame;

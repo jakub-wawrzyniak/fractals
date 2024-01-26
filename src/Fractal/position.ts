@@ -9,8 +9,10 @@ export class Position {
     this.level = level;
   }
 
-  clone() {
-    return new Position(this.center.real, this.center.imaginary, this.level);
+  changeTo(source: Position) {
+    this.level = source.level;
+    this.center.real = source.center.real;
+    this.center.imaginary = source.center.imaginary;
   }
 
   changeBy(vector: Position) {
