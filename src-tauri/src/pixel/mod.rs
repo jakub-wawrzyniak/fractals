@@ -15,7 +15,15 @@ impl PixelCreator for PixelLuma {
     fn get_pixel(&self, item: ComplexItem) -> Luma {
         let id = item.index as f64;
         let max_id = item.max_index as f64;
-        let luma = (id / max_id) * 256.0;
+        if id == max_id {
+            return Luma::from([0; 1]);
+        }
+        let anti_alias = (item.value.norm().log2() / max_id.log2()).log2();
+        // ^the last log base depends on the power in the fractal equation
+
+        let float_id = id - anti_alias;
+        let brightness = 4.0;
+        let luma = (float_id / max_id) * 256.0 * brightness;
         Luma::from([clip(luma); 1])
     }
 }

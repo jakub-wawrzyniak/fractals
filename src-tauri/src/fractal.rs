@@ -7,7 +7,7 @@ pub struct ComplexItem {
 }
 
 pub trait Fractal {
-    const ESCAPE_RADIUS: f64 = 10.0;
+    const ESCAPE_RADIUS: f64 = 8.0;
     fn max_item_id(&self) -> u32;
     fn next_item(&self, current_item: Complex64, point: &Complex64) -> Complex64;
     fn in_bounds(&self, point: &Complex64) -> bool {
@@ -49,7 +49,6 @@ pub struct FractalJulia {
     pub constant: Complex64,
 }
 impl Fractal for FractalJulia {
-    const ESCAPE_RADIUS: f64 = 100.0;
     fn next_item(&self, current_item: Complex64, _: &Complex64) -> Complex64 {
         current_item.powi(2) + self.constant
     }
