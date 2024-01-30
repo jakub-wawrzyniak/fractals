@@ -5,7 +5,7 @@ pub fn clip(input: f64) -> u8 {
     input.round().max(0.0).min(255.0) as u8
 }
 
-pub fn sigmoid(arg: f64) -> f64 {
+pub fn _sigmoid(arg: f64) -> f64 {
     let denominator = std::f64::consts::E.powf(-arg) + 1.0;
     return 1.0 / denominator;
 }

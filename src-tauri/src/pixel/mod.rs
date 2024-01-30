@@ -13,8 +13,9 @@ pub struct PixelLuma;
 impl PixelCreator for PixelLuma {
     type Pixel = Luma;
     fn get_pixel(&self, item: ComplexItem) -> Luma {
-        let value = sigmoid(item.value.norm());
-        let luma = value * 256.0;
+        let id = item.index as f64;
+        let max_id = item.max_index as f64;
+        let luma = (id / max_id) * 256.0;
         Luma::from([clip(luma); 1])
     }
 }
