@@ -17,10 +17,23 @@ pub trait Fractal {
 
     fn eval(&self, point: Complex64) -> ComplexItem {
         let mut item_id = 0;
+        let mut period = 0;
         let mut current_item = point;
+        let mut old_item = point.clone();
         while self.in_bounds(&current_item) && item_id < self.max_item_id() {
             current_item = self.next_item(current_item, &point);
             item_id += 1;
+            period += 1;
+
+            if current_item == old_item {
+                item_id = self.max_item_id();
+                break;
+            }
+
+            if period >= 20 {
+                old_item = current_item.clone();
+                period = 0;
+            }
         }
         ComplexItem {
             value: current_item,
