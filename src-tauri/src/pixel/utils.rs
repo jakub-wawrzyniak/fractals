@@ -18,6 +18,22 @@ pub fn _squeeze(arg: f64) -> f64 {
     arg / (1.0 + arg)
 }
 
+pub fn _ease_fractal(index: f64, max_iterations: f64) -> f64 {
+    let arg = index / max_iterations;
+    let output = if arg < 0.5 {
+        4.0 * arg.powi(3)
+    } else {
+        1.0 - (-2.0 * arg + 2.0).powi(3) * 0.5
+    };
+    output as f64
+}
+
+pub fn _ease_in_fractal(index: f64, max_iterations: f64) -> f64 {
+    let arg = index / max_iterations;
+    let output = arg.powi(4);
+    output * max_iterations as f64
+}
+
 pub fn blend_channel_overlay(bottom: f64, top: f64) -> u8 {
     let blended = if bottom < 0.5 {
         2.0 * bottom * top
