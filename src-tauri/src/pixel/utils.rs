@@ -5,6 +5,10 @@ pub fn clip(input: f64) -> u8 {
     input.round().max(0.0).min(255.0) as u8
 }
 
+pub fn normalize(pixel: u8) -> f64 {
+    pixel as f64 / 256.0
+}
+
 pub fn _sigmoid(arg: f64) -> f64 {
     let denominator = std::f64::consts::E.powf(-arg) + 1.0;
     return 1.0 / denominator;
@@ -14,9 +18,7 @@ pub fn _squeeze(arg: f64) -> f64 {
     arg / (1.0 + arg)
 }
 
-pub fn blend_overlay(bottom: u8, top: u8) -> u8 {
-    let bottom = bottom as f64 / 256.0;
-    let top = top as f64 / 256.0;
+pub fn blend_channel_overlay(bottom: f64, top: f64) -> u8 {
     let blended = if bottom < 0.5 {
         2.0 * bottom * top
     } else {
@@ -25,15 +27,21 @@ pub fn blend_overlay(bottom: u8, top: u8) -> u8 {
     return clip(blended * 256.0);
 }
 
-pub type ColorLUT = [Rgb; 256];
-pub fn create_color_lut(color: Rgb) -> ColorLUT {
+pub fn blend_with_color(luma: f64, color: &Rgb) -> Rgb {
+    Rgb::from([
+        blend_channel_overlay(luma, normalize(color[0])),
+        blend_channel_overlay(luma, normalize(color[1])),
+        blend_channel_overlay(luma, normalize(color[2])),
+    ])
+}
+
+pub type _ColorLUT = [Rgb; 256];
+pub fn _create_color_lut(color: Rgb) -> _ColorLUT {
     let black = image::Rgb::<u8>([0, 0, 0]);
     let mut lut = [black; 256];
     for luma in 0..=255 {
-        let r = blend_overlay(luma, color.0[0]);
-        let g = blend_overlay(luma, color.0[1]);
-        let b = blend_overlay(luma, color.0[2]);
-        lut[luma as usize] = image::Rgb([r, g, b]);
+        let normal = normalize(luma);
+        lut[luma as usize] = blend_with_color(normal, &color);
     }
     return lut;
 }
