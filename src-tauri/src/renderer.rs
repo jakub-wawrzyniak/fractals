@@ -1,33 +1,30 @@
 use crate::{
     color::{ColorCreator, Rgb},
-    fractal,
+    data::FractalFragment,
+    fractal::Fractal,
 };
 use image::ImageBuffer as __ImageBuffer;
 use num::complex::Complex64;
-use serde::Deserialize;
 use std::{mem::size_of, num::NonZeroUsize, thread, vec};
 
 pub type ImageBuffer = __ImageBuffer<Rgb, Vec<u8>>;
 
-#[derive(Deserialize, Clone)]
-pub struct FractalFragment<Point> {
-    pub height_px: u32,
-    pub width_px: u32,
-    pub top_left: Point,
-    pub bottom_right: Point,
-}
-
 #[derive(Clone)]
-pub struct FractalImage<Fractal> {
-    pub fractal: Fractal,
-    pub fragment: FractalFragment<Complex64>,
-    pub color: ColorCreator,
+pub struct FractalImage {
+    fractal: Fractal,
+    fragment: FractalFragment,
+    color: ColorCreator,
 }
 
-impl<Fractal> FractalImage<Fractal>
-where
-    Fractal: fractal::Fractal + Send + Copy + 'static,
-{
+impl FractalImage {
+    pub fn new(fractal: Fractal, fragment: FractalFragment, color: ColorCreator) -> Self {
+        Self {
+            fractal,
+            fragment,
+            color,
+        }
+    }
+
     fn pixel_size(&self) -> f64 {
         let width = self.fragment.width_px as f64;
         let real_min = self.fragment.top_left.re;
@@ -164,15 +161,11 @@ pub fn into_data_url(raw: ImageBuffer) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        color::ColorCreator,
-        fractal::{FractalBurningShip, FractalJulia, FractalMandelbrot, FractalNewton},
-    };
-
-    use super::{into_data_url, FractalFragment, FractalImage};
+    use super::*;
+    use crate::data::FractalVariant::*;
     use num::{complex::Complex64, Complex};
 
-    const FRAGMENT: FractalFragment<Complex64> = FractalFragment {
+    const FRAGMENT: FractalFragment = FractalFragment {
         width_px: 512,
         height_px: 512,
         top_left: Complex::new(-2.5, 2.5),
@@ -182,42 +175,33 @@ mod tests {
     const COLOR: ColorCreator =
         ColorCreator::new(image::Rgb([255, 0, 0]), crate::color::ColorMethod::Linear);
 
-    fn mandelbrot() -> FractalImage<FractalMandelbrot> {
+    fn mandelbrot() -> FractalImage {
         FractalImage {
             color: COLOR,
             fragment: FRAGMENT,
-            fractal: FractalMandelbrot {
-                max_iterations: 1024,
-            },
+            fractal: Fractal::new(1024, Mandelbrot),
         }
     }
-    fn julia_set(color: ColorCreator) -> FractalImage<FractalJulia> {
+    fn julia_set(color: ColorCreator) -> FractalImage {
         FractalImage {
             color,
             fragment: FRAGMENT,
-            fractal: FractalJulia {
-                max_iterations: 1024,
-                constant: Complex64::new(0.34, 0.08),
-            },
+            fractal: Fractal::new(1024, JuliaSet(Complex64::new(0.34, 0.08))),
         }
     }
-    fn burning_ship() -> FractalImage<FractalBurningShip> {
+    fn burning_ship() -> FractalImage {
         FractalImage {
             fragment: FRAGMENT,
             color: COLOR,
-            fractal: FractalBurningShip {
-                max_iterations: 1024,
-            },
+            fractal: Fractal::new(1024, BurningShip),
         }
     }
 
-    fn newton() -> FractalImage<FractalNewton> {
+    fn newton() -> FractalImage {
         FractalImage {
             fragment: FRAGMENT,
             color: COLOR,
-            fractal: FractalNewton {
-                max_iterations: 1024,
-            },
+            fractal: Fractal::new(1024, Newton),
         }
     }
 

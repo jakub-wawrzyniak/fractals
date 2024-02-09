@@ -3,10 +3,11 @@
 
 mod api;
 mod color;
+mod data;
 mod fractal;
 mod renderer;
 
-use api::{ExportRequest, ExportResult, TileRequest};
+use data::{ExportRequest, ExportResult, TileRequest};
 use renderer::into_data_url;
 
 #[tauri::command]
