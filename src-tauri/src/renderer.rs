@@ -1,10 +1,13 @@
-use crate::{fractal, pixel::PixelCreator};
-use image::{ImageBuffer as __ImageBuffer, PixelWithColorType};
+use crate::{
+    color::{ColorCreator, Rgb},
+    fractal,
+};
+use image::ImageBuffer as __ImageBuffer;
 use num::complex::Complex64;
 use serde::Deserialize;
 use std::{mem::size_of, num::NonZeroUsize, thread, vec};
 
-pub type ImageBuffer<Px> = __ImageBuffer<Px, Vec<u8>>;
+pub type ImageBuffer = __ImageBuffer<Rgb, Vec<u8>>;
 
 #[derive(Deserialize, Clone)]
 pub struct FractalFragment<Point> {
@@ -24,8 +27,7 @@ pub struct FractalImage<Fractal, GetPixel> {
 impl<Fractal, GetPixel> FractalImage<Fractal, GetPixel>
 where
     Fractal: fractal::Fractal + Send + Copy + 'static,
-    GetPixel: PixelCreator + Send + Copy + 'static,
-    GetPixel::Pixel: image::Pixel<Subpixel = u8> + 'static,
+    GetPixel: ColorCreator + Send + Copy + 'static,
 {
     fn pixel_size(&self) -> f64 {
         let width = self.fragment.width_px as f64;
@@ -34,10 +36,10 @@ where
         (real_max - real_min) / width
     }
 
-    pub fn render(&self) -> ImageBuffer<GetPixel::Pixel> {
+    pub fn render(&self) -> ImageBuffer {
         let step = self.pixel_size();
         let size = &self.fragment;
-        let mut image = ImageBuffer::<GetPixel::Pixel>::new(size.width_px, size.height_px);
+        let mut image = ImageBuffer::new(size.width_px, size.height_px);
         let mut real = size.top_left.re;
         for x in 0..size.width_px {
             let mut imag = size.bottom_right.im;
@@ -94,10 +96,10 @@ where
         if computed_height_px != size.height_px {
             panic!("Slow down, cowboy");
         }
-        return jobs;
+        jobs
     }
 
-    fn delegate_and_run(&self, chunks: u32) -> ImageBuffer<GetPixel::Pixel> {
+    fn delegate_and_run(&self, chunks: u32) -> ImageBuffer {
         let jobs = self.split_work(chunks);
         let mut handles = vec![];
         let mut pixels = vec![];
@@ -114,7 +116,7 @@ where
         ImageBuffer::from_raw(size.width_px, size.height_px, pixels).unwrap()
     }
 
-    pub fn render_on_threads(self) -> ImageBuffer<GetPixel::Pixel> {
+    pub fn render_on_threads(self) -> ImageBuffer {
         let chunks = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::MIN)
             .get()
@@ -124,7 +126,7 @@ where
         // make more threads than CPU cores, the load will average out
     }
 
-    pub fn render_for_ui(self) -> ImageBuffer<GetPixel::Pixel> {
+    pub fn render_for_ui(self) -> ImageBuffer {
         let chunks = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::MIN)
             .get()
@@ -135,24 +137,21 @@ where
     }
 }
 
-pub fn take_and_flip<Px: image::Pixel<Subpixel = u8>>(buffer: ImageBuffer<Px>) -> Vec<u8> {
+pub fn take_and_flip(buffer: ImageBuffer) -> Vec<u8> {
     let width = buffer.width() as usize;
     buffer
         .into_raw()
-        .chunks(width * size_of::<Px>())
-        .into_iter()
+        .chunks(width * size_of::<Rgb>())
         .rev()
         .flatten()
-        .map(|e| *e)
+        .copied()
         .collect()
 }
 
-pub fn into_data_url<Px: image::Pixel<Subpixel = u8> + PixelWithColorType>(
-    raw: ImageBuffer<Px>,
-) -> String {
+pub fn into_data_url(raw: ImageBuffer) -> String {
     let (width, height) = (raw.width(), raw.height());
     let flipped = take_and_flip(raw);
-    let img = ImageBuffer::<Px>::from_vec(width, height, flipped).unwrap();
+    let img = ImageBuffer::from_vec(width, height, flipped).unwrap();
 
     use base64::prelude::*;
     use std::io::Cursor;
@@ -167,12 +166,11 @@ pub fn into_data_url<Px: image::Pixel<Subpixel = u8> + PixelWithColorType>(
 #[cfg(test)]
 mod tests {
     use crate::{
+        color::ColorLinear,
         fractal::{FractalBurningShip, FractalJulia, FractalMandelbrot, FractalNewton},
-        pixel::{PixelLuma, PixelRgb},
     };
 
     use super::{into_data_url, FractalFragment, FractalImage};
-    use divan;
     use num::{complex::Complex64, Complex};
 
     const FRAGMENT: FractalFragment<Complex64> = FractalFragment {
@@ -182,38 +180,38 @@ mod tests {
         bottom_right: Complex::new(2.5, -2.5),
     };
 
-    fn mandelbrot() -> FractalImage<FractalMandelbrot, PixelLuma> {
+    fn mandelbrot() -> FractalImage<FractalMandelbrot, ColorLinear> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: PixelLuma::new(),
+            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalMandelbrot {
                 max_iterations: 1024,
             },
         }
     }
-    fn julia_set() -> FractalImage<FractalJulia, PixelRgb> {
+    fn julia_set() -> FractalImage<FractalJulia, ColorLinear> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: PixelRgb::from_hex("#ff0000".into()),
+            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalJulia {
                 max_iterations: 1024,
                 constant: Complex64::new(0.34, 0.08),
             },
         }
     }
-    fn burning_ship() -> FractalImage<FractalBurningShip, PixelRgb> {
+    fn burning_ship() -> FractalImage<FractalBurningShip, ColorLinear> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: PixelRgb::from_hex("#ff0000".into()),
+            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalBurningShip {
                 max_iterations: 1024,
             },
         }
     }
-    fn newton() -> FractalImage<FractalNewton, PixelRgb> {
+    fn newton() -> FractalImage<FractalNewton, ColorLinear> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: PixelRgb::from_hex("#ff0000".into()),
+            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalNewton {
                 max_iterations: 1024,
             },
@@ -297,19 +295,19 @@ mod tests {
 
     #[test]
     fn render_mandelbrot_saves() {
-        mandelbrot().render().save("./gray.png".to_owned()).unwrap();
+        mandelbrot().render().save("./gray.png").unwrap();
     }
 
     #[test]
     fn render_julia_saves() {
-        julia_set().render().save("./color.png".to_owned()).unwrap();
+        julia_set().render().save("./color.png").unwrap();
     }
 
     #[test]
     fn render_threaded_saves() {
         burning_ship()
             .render_on_threads()
-            .save("./threads.png".to_owned())
+            .save("./threads.png")
             .unwrap();
     }
 }

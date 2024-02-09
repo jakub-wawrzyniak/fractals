@@ -1,5 +1,5 @@
+use crate::color::ColorLinear;
 use crate::fractal::*;
-use crate::pixel::{PixelRgb, Rgb};
 use crate::renderer::{FractalFragment, FractalImage, ImageBuffer};
 use num::complex::Complex64;
 use serde::{Deserialize, Serialize};
@@ -10,9 +10,12 @@ struct Point {
     real: f64,
 }
 
-impl Into<Complex64> for Point {
-    fn into(self) -> Complex64 {
-        Complex64::new(self.real, self.imaginary)
+impl From<Point> for Complex64 {
+    fn from(value: Point) -> Self {
+        Complex64 {
+            re: value.real,
+            im: value.imaginary,
+        }
     }
 }
 
@@ -21,8 +24,8 @@ impl From<FractalFragment<Point>> for FractalFragment<Complex64> {
         FractalFragment {
             top_left: value.top_left.into(),
             bottom_right: value.bottom_right.into(),
-            height_px: value.height_px.into(),
-            width_px: value.width_px.into(),
+            height_px: value.height_px,
+            width_px: value.width_px,
         }
     }
 }
@@ -58,11 +61,11 @@ pub struct ExportRequest {
 }
 
 impl TileRequest {
-    pub fn run(self) -> ImageBuffer<Rgb> {
+    pub fn run(self) -> ImageBuffer {
         use FractalVariant::*;
         let max_iterations = self.fractal.max_iterations;
         let fragment: FractalFragment<Complex64> = self.fragment.into();
-        let pixel_creator = PixelRgb::from_hex(self.color);
+        let pixel_creator = ColorLinear::from_hex(self.color);
         match self.fractal.variant {
             Mandelbrot => (FractalImage {
                 fragment,
@@ -96,11 +99,11 @@ impl TileRequest {
 }
 
 impl ExportRequest {
-    pub fn run(self) -> ImageBuffer<Rgb> {
+    pub fn run(self) -> ImageBuffer {
         use FractalVariant::*;
         let max_iterations = self.fractal.max_iterations;
         let fragment: FractalFragment<Complex64> = self.fragment.into();
-        let pixel_creator = PixelRgb::from_hex(self.color);
+        let pixel_creator = ColorLinear::from_hex(self.color);
         match self.fractal.variant {
             Mandelbrot => (FractalImage {
                 fragment,

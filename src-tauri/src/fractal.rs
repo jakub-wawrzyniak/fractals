@@ -14,14 +14,14 @@ pub trait Fractal {
     fn next_item(&self, current_item: Complex64, point: &Complex64) -> Complex64;
     fn in_bounds(&self, point: &Complex64) -> bool {
         let distance = point.re * point.re + point.im * point.im;
-        return distance < Self::ESCAPE_RADIUS;
+        distance < Self::ESCAPE_RADIUS
     }
 
     fn eval(&self, point: Complex64) -> ComplexItem {
         let mut item_id = 0;
         let mut period = 0;
         let mut current_item = point;
-        let mut old_item = point.clone();
+        let mut old_item = point;
         while self.in_bounds(&current_item) && item_id < self.max_item_id() {
             current_item = self.next_item(current_item, &point);
             item_id += 1;
@@ -33,7 +33,7 @@ pub trait Fractal {
             }
 
             if period >= 20 {
-                old_item = current_item.clone();
+                old_item = current_item;
                 period = 0;
             }
         }

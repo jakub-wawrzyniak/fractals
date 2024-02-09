@@ -1,6 +1,6 @@
 mod utils;
 use self::utils::*;
-pub use self::utils::{Luma, Rgb};
+pub use self::utils::Rgb;
 use crate::fractal::ComplexItem;
 
 impl ComplexItem {
@@ -28,38 +28,17 @@ impl ComplexItem {
     }
 }
 
-pub trait PixelCreator {
-    type Pixel;
-    fn get_pixel(&self, item: ComplexItem) -> Self::Pixel;
+pub trait ColorCreator {
+    fn get_pixel(&self, item: ComplexItem) -> Rgb;
 }
 
 #[derive(Clone, Copy)]
-pub struct PixelLuma {
-    brightness: f64,
-}
-
-impl PixelLuma {
-    pub fn new() -> Self {
-        Self { brightness: 4.0 }
-    }
-}
-
-impl PixelCreator for PixelLuma {
-    type Pixel = Luma;
-    fn get_pixel(&self, item: ComplexItem) -> Luma {
-        let norm = item.normalized_with_aa();
-        let luma = norm * self.brightness;
-        Luma::from([clip(luma * 256.0); 1])
-    }
-}
-
-#[derive(Clone, Copy)]
-pub struct PixelRgb {
+pub struct ColorLinear {
     brightness: f64,
     color: Rgb,
 }
 
-impl PixelRgb {
+impl ColorLinear {
     pub fn new(color: Rgb) -> Self {
         Self {
             color,
@@ -72,8 +51,7 @@ impl PixelRgb {
     }
 }
 
-impl PixelCreator for PixelRgb {
-    type Pixel = Rgb;
+impl ColorCreator for ColorLinear {
     fn get_pixel(&self, item: ComplexItem) -> Rgb {
         let norm = item.normalized_no_aa();
         let luma = norm * self.brightness;

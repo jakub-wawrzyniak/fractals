@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod api;
+mod color;
 mod fractal;
-mod pixel;
 mod renderer;
 
 use api::{ExportRequest, ExportResult, TileRequest};
@@ -18,7 +18,7 @@ async fn calc_tile(request: TileRequest) -> String {
 #[tauri::command]
 async fn export_image(request: ExportRequest) -> ExportResult {
     let path = request.filepath.clone();
-    if let Err(_) = image::ImageFormat::from_path(&path) {
+    if image::ImageFormat::from_path(&path).is_err() {
         return ExportResult::ErrorBadFileType;
     }
     match request.run().save(path) {
