@@ -1,8 +1,10 @@
 use num::complex::Complex64;
 
 pub struct ComplexItem {
-    pub index: u32,
-    pub max_index: u32,
+    pub index: f64,
+    pub max_index: f64,
+    // Those^ values will eventually be converted to f64,
+    // so for simplicity let's do it once
     pub value: Complex64,
 }
 
@@ -37,8 +39,8 @@ pub trait Fractal {
         }
         ComplexItem {
             value: current_item,
-            index: item_id,
-            max_index: self.max_item_id(),
+            index: item_id as f64,
+            max_index: self.max_item_id() as f64,
         }
     }
 }

@@ -185,7 +185,7 @@ mod tests {
     fn mandelbrot() -> FractalImage<FractalMandelbrot, PixelLuma> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: PixelLuma,
+            pixel_creator: PixelLuma::new(),
             fractal: FractalMandelbrot {
                 max_iterations: 1024,
             },
@@ -282,7 +282,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn encodes_png() {
         use base64::prelude::*;
         use std::io::Cursor;
