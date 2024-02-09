@@ -1,4 +1,4 @@
-use crate::color::ColorLinear;
+use crate::color::ColorCreator;
 use crate::fractal::*;
 use crate::renderer::{FractalFragment, FractalImage, ImageBuffer};
 use num::complex::Complex64;
@@ -65,23 +65,23 @@ impl TileRequest {
         use FractalVariant::*;
         let max_iterations = self.fractal.max_iterations;
         let fragment: FractalFragment<Complex64> = self.fragment.into();
-        let pixel_creator = ColorLinear::from_hex(self.color);
+        let pixel_creator = ColorCreator::from_hex(self.color, crate::color::ColorMethod::Linear);
         match self.fractal.variant {
             Mandelbrot => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalMandelbrot { max_iterations },
             })
             .render_for_ui(),
             BurningShip => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalBurningShip { max_iterations },
             })
             .render_for_ui(),
             JuliaSet => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalJulia {
                     max_iterations,
                     constant: self.fractal.constant.unwrap().into(),
@@ -90,7 +90,7 @@ impl TileRequest {
             .render_for_ui(),
             Newton => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalNewton { max_iterations },
             })
             .render_for_ui(),
@@ -103,23 +103,23 @@ impl ExportRequest {
         use FractalVariant::*;
         let max_iterations = self.fractal.max_iterations;
         let fragment: FractalFragment<Complex64> = self.fragment.into();
-        let pixel_creator = ColorLinear::from_hex(self.color);
+        let pixel_creator = ColorCreator::from_hex(self.color, crate::color::ColorMethod::Linear);
         match self.fractal.variant {
             Mandelbrot => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalMandelbrot { max_iterations },
             })
             .render_on_threads(),
             BurningShip => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalBurningShip { max_iterations },
             })
             .render_on_threads(),
             JuliaSet => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalJulia {
                     max_iterations,
                     constant: self.fractal.constant.unwrap().into(),
@@ -128,7 +128,7 @@ impl ExportRequest {
             .render_on_threads(),
             Newton => (FractalImage {
                 fragment,
-                pixel_creator,
+                color: pixel_creator,
                 fractal: FractalNewton { max_iterations },
             })
             .render_on_threads(),

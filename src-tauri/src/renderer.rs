@@ -18,16 +18,15 @@ pub struct FractalFragment<Point> {
 }
 
 #[derive(Clone)]
-pub struct FractalImage<Fractal, GetPixel> {
+pub struct FractalImage<Fractal> {
     pub fractal: Fractal,
     pub fragment: FractalFragment<Complex64>,
-    pub pixel_creator: GetPixel,
+    pub color: ColorCreator,
 }
 
-impl<Fractal, GetPixel> FractalImage<Fractal, GetPixel>
+impl<Fractal> FractalImage<Fractal>
 where
     Fractal: fractal::Fractal + Send + Copy + 'static,
-    GetPixel: ColorCreator + Send + Copy + 'static,
 {
     fn pixel_size(&self) -> f64 {
         let width = self.fragment.width_px as f64;
@@ -46,7 +45,7 @@ where
             for y in 0..size.height_px {
                 let point = Complex64::new(real, imag);
                 let divergence = self.fractal.eval(point);
-                let pixel = self.pixel_creator.get_pixel(divergence);
+                let pixel = self.color.get_pixel(&divergence);
                 image.put_pixel(x, y, pixel);
                 imag += step;
             }
@@ -166,7 +165,7 @@ pub fn into_data_url(raw: ImageBuffer) -> String {
 #[cfg(test)]
 mod tests {
     use crate::{
-        color::ColorLinear,
+        color::ColorCreator,
         fractal::{FractalBurningShip, FractalJulia, FractalMandelbrot, FractalNewton},
     };
 
@@ -180,73 +179,69 @@ mod tests {
         bottom_right: Complex::new(2.5, -2.5),
     };
 
-    fn mandelbrot() -> FractalImage<FractalMandelbrot, ColorLinear> {
+    const COLOR: ColorCreator =
+        ColorCreator::new(image::Rgb([255, 0, 0]), crate::color::ColorMethod::Linear);
+
+    fn mandelbrot() -> FractalImage<FractalMandelbrot> {
         FractalImage {
+            color: COLOR,
             fragment: FRAGMENT,
-            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalMandelbrot {
                 max_iterations: 1024,
             },
         }
     }
-    fn julia_set() -> FractalImage<FractalJulia, ColorLinear> {
+    fn julia_set(color: ColorCreator) -> FractalImage<FractalJulia> {
         FractalImage {
+            color,
             fragment: FRAGMENT,
-            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
             fractal: FractalJulia {
                 max_iterations: 1024,
                 constant: Complex64::new(0.34, 0.08),
             },
         }
     }
-    fn burning_ship() -> FractalImage<FractalBurningShip, ColorLinear> {
+    fn burning_ship() -> FractalImage<FractalBurningShip> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
+            color: COLOR,
             fractal: FractalBurningShip {
                 max_iterations: 1024,
             },
         }
     }
-    fn newton() -> FractalImage<FractalNewton, ColorLinear> {
+
+    fn newton() -> FractalImage<FractalNewton> {
         FractalImage {
             fragment: FRAGMENT,
-            pixel_creator: ColorLinear::from_hex("#ff0000".into()),
+            color: COLOR,
             fractal: FractalNewton {
                 max_iterations: 1024,
             },
         }
     }
 
-    #[divan::bench]
-    fn image_vec_serialization(bencher: divan::Bencher) {
-        let image = mandelbrot().render().into_raw();
-        bencher.bench(|| {
-            serde_json::to_string(&image).unwrap();
-        })
-    }
-
-    #[divan::bench(sample_count = 10, threads = 1)]
+    #[divan::bench(sample_count = 30)]
     fn rendered_mandelbrot() {
         mandelbrot().render();
     }
 
-    #[divan::bench(sample_count = 10, threads = 1)]
+    #[divan::bench(sample_count = 30)]
     fn rendered_julia_set() {
-        julia_set().render();
+        julia_set(divan::black_box(COLOR)).render();
     }
 
-    #[divan::bench(sample_count = 10, threads = 1)]
+    #[divan::bench(sample_count = 30)]
     fn rendered_burning_ship() {
         burning_ship().render();
     }
 
-    #[divan::bench(sample_count = 3, threads = 1)]
+    #[divan::bench(sample_count = 30)]
     fn rendered_newton() {
         newton().render();
     }
 
-    #[divan::bench(sample_count = 10, threads = 1)]
+    #[divan::bench(sample_count = 20, threads = 1)]
     fn rendered_mandelbrot_threaded() {
         mandelbrot().render_on_threads();
     }
@@ -265,7 +260,7 @@ mod tests {
     fn renders_buffer_with_expected_size() {
         let rendered = mandelbrot().render();
         let (width, height) = rendered.dimensions();
-        let full_size = width * height;
+        let full_size = width * height * super::size_of::<super::Rgb>() as u32;
         assert_eq!(full_size as usize, rendered.into_raw().len());
     }
 
@@ -273,7 +268,7 @@ mod tests {
     fn size_is_same_after_flipping() {
         let rendered = mandelbrot().render();
         let (width, height) = rendered.dimensions();
-        let expected_size = width * height;
+        let expected_size = width * height * super::size_of::<super::Rgb>() as u32;
 
         let got_size = super::take_and_flip(rendered).len() as u32;
         assert_eq!(expected_size, got_size);
@@ -300,7 +295,7 @@ mod tests {
 
     #[test]
     fn render_julia_saves() {
-        julia_set().render().save("./color.png").unwrap();
+        julia_set(COLOR).render().save("./color.png").unwrap();
     }
 
     #[test]

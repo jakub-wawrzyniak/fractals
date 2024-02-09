@@ -1,6 +1,6 @@
 mod utils;
-use self::utils::*;
 pub use self::utils::Rgb;
+use self::utils::*;
 use crate::fractal::ComplexItem;
 
 impl ComplexItem {
@@ -28,33 +28,68 @@ impl ComplexItem {
     }
 }
 
-pub trait ColorCreator {
-    fn get_pixel(&self, item: ComplexItem) -> Rgb;
+#[derive(Clone, Copy)]
+pub enum ColorMethod {
+    Linear,
+    Raw,
+    Exponential(f64),
 }
 
 #[derive(Clone, Copy)]
-pub struct ColorLinear {
-    brightness: f64,
+pub struct ColorCreator {
     color: Rgb,
+    brightness: f64,
+    anti_alias: bool,
+    method: ColorMethod,
 }
 
-impl ColorLinear {
-    pub fn new(color: Rgb) -> Self {
+impl ColorCreator {
+    pub const fn new(color: Rgb, method: ColorMethod) -> Self {
         Self {
             color,
+            method,
             brightness: 2.0,
+            anti_alias: true,
         }
     }
-    pub fn from_hex(hex: String) -> Self {
+    pub fn from_hex(hex: String, method: ColorMethod) -> Self {
         let color = hex_to_color(hex);
-        Self::new(color)
+        Self::new(color, method)
     }
-}
 
-impl ColorCreator for ColorLinear {
-    fn get_pixel(&self, item: ComplexItem) -> Rgb {
-        let norm = item.normalized_no_aa();
-        let luma = norm * self.brightness;
+    fn raw(&self, item: &ComplexItem) -> f64 {
+        let mut id = item.index;
+        if self.anti_alias {
+            id -= item.anti_alias();
+        }
+
+        id / 256.0
+    }
+
+    fn linear(&self, item: &ComplexItem) -> f64 {
+        match self.anti_alias {
+            false => item.normalized_no_aa(),
+            true => item.normalized_with_aa(),
+        }
+    }
+
+    fn exponential(&self, item: &ComplexItem, pow: f64) -> f64 {
+        let norm = match self.anti_alias {
+            false => item.normalized_no_aa(),
+            true => item.normalized_with_aa(),
+        };
+        norm.powf(pow)
+    }
+
+    pub fn get_pixel(&self, item: &ComplexItem) -> Rgb {
+        use ColorMethod::*;
+        let base = match self.method {
+            Raw => self.raw(item),
+            Linear => self.linear(item),
+            Exponential(pow) => self.exponential(item, pow),
+        };
+
+        let luma = base * self.brightness;
         blend_with_color(luma, &self.color)
     }
 }
