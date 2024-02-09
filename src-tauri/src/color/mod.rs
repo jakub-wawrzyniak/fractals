@@ -1,7 +1,10 @@
 mod utils;
-pub use self::utils::Rgb;
+pub use self::utils::hex_to_color;
 use self::utils::*;
-use crate::fractal::ComplexItem;
+use crate::{
+    data::{ColorMethod, Rgb},
+    fractal::ComplexItem,
+};
 
 impl ComplexItem {
     /// Returns a value between 0 and 1, provided self.index < self.max_index
@@ -29,13 +32,6 @@ impl ComplexItem {
 }
 
 #[derive(Clone, Copy)]
-pub enum ColorMethod {
-    Linear,
-    Raw,
-    Exponential(f64),
-}
-
-#[derive(Clone, Copy)]
 pub struct ColorCreator {
     color: Rgb,
     brightness: f64,
@@ -44,17 +40,13 @@ pub struct ColorCreator {
 }
 
 impl ColorCreator {
-    pub const fn new(color: Rgb, method: ColorMethod) -> Self {
+    pub const fn new(color: Rgb, brightness: f64, anti_alias: bool, method: ColorMethod) -> Self {
         Self {
             color,
+            brightness,
+            anti_alias,
             method,
-            brightness: 2.0,
-            anti_alias: true,
         }
-    }
-    pub fn from_hex(hex: String, method: ColorMethod) -> Self {
-        let color = hex_to_color(hex);
-        Self::new(color, method)
     }
 
     fn raw(&self, item: &ComplexItem) -> f64 {
@@ -86,7 +78,7 @@ impl ColorCreator {
         let base = match self.method {
             Raw => self.raw(item),
             Linear => self.linear(item),
-            Exponential(pow) => self.exponential(item, pow),
+            Exponential { power } => self.exponential(item, power),
         };
 
         let luma = base * self.brightness;

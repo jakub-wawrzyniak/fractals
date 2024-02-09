@@ -1,4 +1,4 @@
-pub type Rgb = image::Rgb<u8>;
+use crate::data::Rgb;
 
 pub fn clip(input: f64) -> u8 {
     input.round().max(0.0).min(255.0) as u8

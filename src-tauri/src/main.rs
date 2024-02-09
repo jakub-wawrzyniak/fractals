@@ -1,18 +1,19 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod api;
 mod color;
+mod convert;
 mod data;
 mod fractal;
 mod renderer;
 
 use data::{ExportRequest, ExportResult, TileRequest};
-use renderer::into_data_url;
+use renderer::{into_data_url, FractalImage};
 
 #[tauri::command]
 async fn calc_tile(request: TileRequest) -> String {
-    let image = request.run();
+    let fractal: FractalImage = request.into();
+    let image = fractal.render_for_ui();
     into_data_url(image)
 }
 
@@ -22,7 +23,8 @@ async fn export_image(request: ExportRequest) -> ExportResult {
     if image::ImageFormat::from_path(&path).is_err() {
         return ExportResult::ErrorBadFileType;
     }
-    match request.run().save(path) {
+    let fractal: FractalImage = request.into();
+    match fractal.render_on_threads().save(path) {
         Err(_) => ExportResult::ErrorUnknown,
         Ok(_) => ExportResult::Done,
     }

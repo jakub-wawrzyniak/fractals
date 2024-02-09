@@ -1,6 +1,6 @@
 use crate::{
-    color::{ColorCreator, Rgb},
-    data::FractalFragment,
+    color::ColorCreator,
+    data::{FractalFragment, Rgb},
     fractal::Fractal,
 };
 use image::ImageBuffer as __ImageBuffer;
@@ -162,8 +162,9 @@ pub fn into_data_url(raw: ImageBuffer) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::FractalVariant::*;
+    use crate::data::*;
     use num::{complex::Complex64, Complex};
+    use FractalVariant::*;
 
     const FRAGMENT: FractalFragment = FractalFragment {
         width_px: 512,
@@ -173,7 +174,7 @@ mod tests {
     };
 
     const COLOR: ColorCreator =
-        ColorCreator::new(image::Rgb([255, 0, 0]), crate::color::ColorMethod::Linear);
+        ColorCreator::new(image::Rgb([255, 0, 0]), 4.0, true, ColorMethod::Linear);
 
     fn mandelbrot() -> FractalImage {
         FractalImage {
@@ -186,7 +187,12 @@ mod tests {
         FractalImage {
             color,
             fragment: FRAGMENT,
-            fractal: Fractal::new(1024, JuliaSet(Complex64::new(0.34, 0.08))),
+            fractal: Fractal::new(
+                1024,
+                JuliaSet {
+                    constant: Complex64::new(0.34, 0.08),
+                },
+            ),
         }
     }
     fn burning_ship() -> FractalImage {

@@ -1,5 +1,6 @@
 use num::complex::Complex64;
 use serde::{Deserialize, Serialize};
+pub type Rgb = image::Rgb<u8>;
 
 #[derive(Deserialize, Clone, Copy)]
 #[serde(remote = "Complex64")]
@@ -18,13 +19,32 @@ pub struct FractalFragment {
     pub bottom_right: Complex64,
 }
 
+#[derive(Deserialize, Clone, Copy)]
+#[serde(tag = "method")]
+pub enum ColorMethod {
+    Linear,
+    Raw,
+    Exponential { power: f64 },
+}
+
 #[derive(Deserialize, Clone)]
+pub struct ColorConfig {
+    pub color: String,
+    pub brightness: f64,
+    pub anti_alias: bool,
+    pub method: ColorMethod,
+}
+
+#[derive(Deserialize, Clone, Copy)]
+#[serde(tag = "type")]
 pub enum FractalVariant {
     Newton,
     BurningShip,
     Mandelbrot,
-    #[serde(with = "ComplexDef")]
-    JuliaSet(Complex64),
+    JuliaSet {
+        #[serde(with = "ComplexDef")]
+        constant: Complex64,
+    },
 }
 
 #[derive(Deserialize, Clone)]
@@ -37,14 +57,14 @@ pub struct FractalConfig {
 pub struct TileRequest {
     pub fractal: FractalConfig,
     pub fragment: FractalFragment,
-    pub color: String,
+    pub color: ColorConfig,
 }
 
 #[derive(Deserialize, Clone)]
 pub struct ExportRequest {
     pub fractal: FractalConfig,
     pub fragment: FractalFragment,
-    pub color: String,
+    pub color: ColorConfig,
     pub filepath: String,
 }
 
