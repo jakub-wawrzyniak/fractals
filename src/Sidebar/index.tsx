@@ -1,40 +1,36 @@
 import { ExportConfig } from "./ExportConfig";
 import { Show } from "solid-js";
-import {
-  fractalConfig,
-  getConstantOrThrow as constant,
-  imaginaryBounds,
-  realBounds,
-  setConstantImaginary,
-  setConstantReal,
-  setMaxIterations,
-  store,
-} from "../shared";
 import { FractalEquation } from "./FractalEquation";
 import { InputRange } from "./InputRange";
 import { FractalSelectVariant } from "./FractalSelectVariant";
 import { FractalColorPicker } from "./FractalColorPicker";
 import { InputNumber } from "./InputNumber";
+import { store } from "../store";
 
 export const Sidebar = () => {
+  const BOUNDS = {
+    max: 5,
+    min: -5,
+  };
+  const constant = () => store.fractal.getConstantOrThrow("Sidebar");
   return (
     <aside class="w-[20vw] min-w-[350px] px-6 py-8 flex flex-col gap-2">
       <FractalSelectVariant />
       <FractalEquation />
-      <Show when={fractalConfig().initConstant !== null}>
+      <Show when={store.fractal.getConfig().initConstant !== null}>
         <InputRange
-          getNumber={() => constant("InputNumber").real}
-          setNumber={setConstantReal}
-          max={realBounds().max}
-          min={realBounds().min}
+          getNumber={() => constant().re}
+          setNumber={(num) => store.fractal.setConstant("re", num)}
+          max={BOUNDS.max}
+          min={BOUNDS.min}
           label="C: real component"
           class="range-primary"
         />
         <InputRange
-          getNumber={() => constant("InputNumber").imaginary}
-          setNumber={setConstantImaginary}
-          max={imaginaryBounds().max}
-          min={imaginaryBounds().min}
+          getNumber={() => constant().im}
+          setNumber={(num) => store.fractal.setConstant("im", num)}
+          max={BOUNDS.max}
+          min={BOUNDS.min}
           label="C: imaginary component"
           class="range-primary"
           unit="i"
@@ -42,8 +38,8 @@ export const Sidebar = () => {
       </Show>
       <div class="flex gap-1 items-end">
         <InputNumber
-          getNumber={() => store.fractal.maxIterations}
-          setNumber={(count) => setMaxIterations(count)}
+          getNumber={() => store.fractal.get.maxIterations}
+          setNumber={(count) => store.fractal.set("maxIterations", count)}
           label="How large is Infinity?"
           class="flex-1"
         />

@@ -1,54 +1,54 @@
-import { Complex } from "./types";
+import { Complex, Size } from "./types";
 
-export const DEFAULT_ASPECT_RATIO = 1;
+export const TILE_SIZE_PX = 512;
 export const FRACTALS = [
   "Mandelbrot",
   "JuliaSet",
   "BurningShip",
   "Newton",
 ] as const;
-export type Fractal = (typeof FRACTALS)[number];
+export const INIT_FRACTAL = FRACTALS[0];
+export const INIT_VIEWER_SIZE: Size = {
+  width: 800,
+  height: 600,
+};
 
+export type Fractal = (typeof FRACTALS)[number];
 type FractalConfig = {
   name: string;
   equation: string;
-  allowedRangeInComplex: number;
   offsetGraphInComplex: Complex;
   description?: string;
   initConstant: Complex | null;
 };
 
-const noOffset: Complex = { real: 0, imaginary: 0 };
+const noOffset: Complex = { re: 0, im: 0 };
 export const FRACTAL_CONFIG = {
   Mandelbrot: {
     name: "Mandelbrot's Set",
     equation: "Zn+1 = Zn^2 + C",
-    allowedRangeInComplex: 4,
-    offsetGraphInComplex: { real: -0.7, imaginary: 0 },
+    offsetGraphInComplex: { re: -0.7, im: 0 },
     initConstant: null,
   },
   JuliaSet: {
     name: "Julia Set",
     equation: "Zn+1 = Zn^2 + C",
-    allowedRangeInComplex: 4,
     offsetGraphInComplex: noOffset,
     initConstant: {
-      real: 0.304,
-      imaginary: -0.436,
+      re: 0.304,
+      im: -0.436,
     },
   },
   BurningShip: {
     name: "Burning Ship",
     equation: "Zn+1 = (|Zr| + i|Zi|)^2 + C",
-    offsetGraphInComplex: { real: -0.3, imaginary: -0.5 },
-    allowedRangeInComplex: 5,
+    offsetGraphInComplex: { re: -0.3, im: -0.5 },
     initConstant: null,
   },
   Newton: {
     name: "Newton's fractal",
     equation: "Zn+1 = (2 * Zn^3 + 1) / 3Zn^2",
     offsetGraphInComplex: noOffset,
-    allowedRangeInComplex: 3,
     initConstant: null,
   },
 } as const satisfies Record<Fractal, FractalConfig>;

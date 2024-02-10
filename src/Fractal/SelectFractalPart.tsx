@@ -1,10 +1,6 @@
 import { Show } from "solid-js";
-import {
-  Point,
-  store,
-  setExportSelectionPoint as setSelection,
-  setIsSelecting,
-} from "../shared";
+import { Point } from "../shared";
+import { store } from "../store";
 
 type Event = MouseEvent & {
   currentTarget: HTMLDivElement;
@@ -12,7 +8,8 @@ type Event = MouseEvent & {
 };
 
 export const SelectFractalPart = () => {
-  const selection = () => store.export.selection;
+  const config = store.exportConfig;
+  const selection = () => store.exportConfig.get.selection;
   const getMousePosition = (e: Event): Point => {
     const { width, height } = e.target.getBoundingClientRect();
     return {
@@ -37,7 +34,7 @@ export const SelectFractalPart = () => {
   };
 
   return (
-    <Show when={store.export.source === "selection"}>
+    <Show when={config.get.source === "selection"}>
       <div class="w-full h-full absolute top-0 left-0 z-20">
         <svg
           class="w-full h-full"
@@ -52,7 +49,7 @@ export const SelectFractalPart = () => {
             </mask>
           </defs>
           <rect
-            fill="white"
+            fill="black"
             opacity="20%"
             width="100%"
             height="100%"
@@ -61,16 +58,16 @@ export const SelectFractalPart = () => {
         </svg>
         <div
           class="w-full h-full absolute top-0 left-0 cursor-crosshair"
-          onMouseUp={() => setIsSelecting(false)}
-          onMouseOut={() => setIsSelecting(false)}
+          onMouseUp={() => config.setSelection("isSelecting", false)}
+          onMouseOut={() => config.setSelection("isSelecting", false)}
           onMouseMove={
             selection().isSelecting
-              ? (e) => setSelection("end", getMousePosition(e))
+              ? (e) => config.setSelection("end", getMousePosition(e))
               : undefined
           }
           onMouseDown={(e) => {
-            setSelection("start", getMousePosition(e));
-            setIsSelecting(true);
+            config.setSelection("start", getMousePosition(e));
+            config.setSelection("isSelecting", true);
           }}
         />
       </div>

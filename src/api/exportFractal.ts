@@ -1,9 +1,10 @@
 import { dialog, invoke } from "@tauri-apps/api";
-import { pointToComplex } from "../Fractal/utils";
-import { fractalViewer } from "../Fractal/viewer";
-import { exportHeight, setExportStatus, store } from "../shared";
+import { store } from "../store";
 import { ExportFractalRequest } from "./types";
 import { getFractalConfig } from "./utils";
+import { fractalApp } from "../Fractal/fractalApp";
+
+const state = store.exportConfig;
 
 const getDefaultSaveDir = async () => {
   let path = await invoke<null | string>("get_default_save_dir");
@@ -11,7 +12,7 @@ const getDefaultSaveDir = async () => {
 };
 
 const getViewportSelection = () => {
-  if (store.export.source === "screen")
+  if (state.get.source === "screen")
     return {
       left: 0,
       top: 0,
@@ -19,7 +20,7 @@ const getViewportSelection = () => {
       bottom: 1,
     };
 
-  const { start, end } = store.export.selection;
+  const { start, end } = state.get.selection;
   const { max, min } = Math;
   return {
     left: min(start.x, end.x),
@@ -30,58 +31,54 @@ const getViewportSelection = () => {
 };
 
 export const onExportRequest = async () => {
-  if (fractalViewer === null) {
-    setExportStatus("errorUnknown")
-    return;
-  }
-  setExportStatus("pickingFilePath");
-  const bounds = fractalViewer.viewport.getBounds();
+  state.set("status", "pickingFilePath");
+  const screen = store.viewer.get;
   const viewportSelection = getViewportSelection();
-  const topLeft = pointToComplex({
-    x: bounds.x + bounds.width * viewportSelection.left,
-    y: bounds.y + bounds.height * viewportSelection.top,
+
+  const topLeft = fractalApp.renderer.viewportToComplex({
+    x: screen.width * viewportSelection.left,
+    y: screen.height * viewportSelection.top,
   });
-  const bottomRight = pointToComplex({
-    x: bounds.x + bounds.width * viewportSelection.right,
-    y: bounds.y + bounds.height * viewportSelection.bottom,
+  const bottomRight = fractalApp.renderer.viewportToComplex({
+    x: screen.width * viewportSelection.right,
+    y: screen.height * viewportSelection.bottom,
   });
 
   const filepath = await dialog.save({
-    defaultPath: store.export.filepath || (await getDefaultSaveDir()),
+    defaultPath: state.get.filepath || (await getDefaultSaveDir()),
     title: "Save your fractal",
     filters: [
       {
-        name: store.fractal.variant,
+        name: store.fractal.get.variant,
         extensions: ["png", "jpeg"],
       },
     ],
   });
 
   if (filepath == null) {
-    setExportStatus("idle");
+    state.set("status", "idle");
     return;
   }
 
   const request: ExportFractalRequest = {
-    fractal: getFractalConfig(),
+    ...getFractalConfig(),
     fragment: {
-      height_px: exportHeight(),
-      width_px: store.export.width,
+      height_px: state.getHeight(),
+      width_px: state.get.width,
       top_left: topLeft,
       bottom_right: bottomRight,
     },
-    color: store.fractal.color,
     filepath,
   };
 
-  setExportStatus("exporting");
+  state.set("status", "exporting");
   type Result = "ErrorUnknown" | "ErrorBadFileType" | "Done";
   const result = await invoke<Result>("export_image", { request });
-  const resultToStatus: Record<Result, typeof store.export.status> = {
+  const resultToStatus: Record<Result, typeof state.get.status> = {
     Done: "done",
     ErrorBadFileType: "errorBadFileType",
     ErrorUnknown: "errorUnknown",
   };
   const status = resultToStatus[result];
-  setExportStatus(status);
+  state.set("status", status);
 };

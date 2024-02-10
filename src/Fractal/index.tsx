@@ -1,46 +1,39 @@
-import { Show, createEffect } from "solid-js";
-import { fractalViewer, mountFractalViewer } from "./viewer.js";
-import { useAspectRatio } from "./hooks.js";
-import { VIEWER_OPTIONS } from "./config.js";
-import { setViewerAspectRatio, store } from "../shared";
-import { SelectFractalPart } from "./SelectFractalPart.jsx";
-import { ColorOverlay } from "./ColorOverlay.jsx";
+import { SelectFractalPart } from "./SelectFractalPart";
+import { Show, createEffect, onMount } from "solid-js";
+import { store } from "../store";
+import { useSize } from "./hooks";
+import { fractalApp } from "./fractalApp";
+import { INIT_VIEWER_SIZE } from "../shared/constants";
 
 export const Fractal = () => {
-  const ratio = useAspectRatio(VIEWER_OPTIONS.id);
-
-  /**
-   * Tracks values, for which the whole
-   * FractalViewer must refresh.
-   */
-  const refreshViewerSignal = () => {
-    store.fractal.constant?.real;
-    store.fractal.constant?.imaginary;
-    store.fractal.variant;
-    store.fractal.maxIterations;
-  };
+  const root = (
+    <div class="min-h-screen relative h-0 overflow-hidden" />
+  ) as HTMLDivElement;
+  const size = useSize(root, INIT_VIEWER_SIZE);
 
   createEffect(() => {
-    refreshViewerSignal();
-    fractalViewer?.destroy();
-    if (ratio.isChanging()) return;
-    mountFractalViewer();
+    const newSize = size.debounced();
+    store.viewer.setSize(newSize);
+    fractalApp.resize(newSize);
+  });
+
+  onMount(() => {
+    fractalApp.mountAt(root);
   });
 
   createEffect(() => {
-    setViewerAspectRatio(ratio.debounced());
+    const hash = store.fractal.getHash();
+    const variant = store.fractal.get.variant;
+    fractalApp.updateConfig(hash, variant);
   });
 
   return (
-    <main class="grow relative bg-base-300">
-      <div class="min-h-screen relative h-0" id={VIEWER_OPTIONS.id}>
-        {/* idk why the h-0 is needed, but without it the viewer just
-      won't show up (despite having space for it) :c */}
-      </div>
-      <ColorOverlay />
+    <main class="grow relative bg-base-300 min-h-screen">
+      {root}
       <SelectFractalPart />
-      <Show when={ratio.isChanging()}>
-        <div class="w-full h-full grid place-content-center absolute top-0 left-0 z-30">
+      <Show when={size.isChanging()}>
+        {/* TODO: Set background color to bg of fractal */}
+        <div class="w-full h-full grid place-content-center absolute top-0 left-0 z-30 bg-base-300">
           <span class="loading loading-spinner loading-lg" />
         </div>
       </Show>

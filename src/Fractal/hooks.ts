@@ -1,5 +1,5 @@
 import { createSignal, onCleanup, onMount } from "solid-js";
-import { DEFAULT_ASPECT_RATIO } from "../shared";
+import { Size } from "../shared";
 
 type DebounceArgs<T> = {
   delayMs: number;
@@ -12,9 +12,7 @@ export const useDebounced = <Data>({
 }: DebounceArgs<Data>) => {
   const [current, setCurrent] = createSignal(initValue);
   const [debounced, setDebounced] = createSignal(initValue);
-  const isChanging = () => {
-    return current() !== debounced();
-  };
+  const isChanging = () => current() !== debounced();
 
   let timer = -1;
   const clear = () => clearTimeout(timer);
@@ -34,22 +32,20 @@ export const useDebounced = <Data>({
   };
 };
 
-export const useAspectRatio = (elementId: string) => {
-  const { update, ...info } = useDebounced({
+export const useSize = (element: HTMLElement | null, initValue: Size) => {
+  const { update, ...info } = useDebounced<Size>({
     delayMs: 300,
-    initValue: DEFAULT_ASPECT_RATIO,
+    initValue: initValue,
   });
 
   const observer = new ResizeObserver((entries) => {
-    const { height, width } = entries[0].contentRect;
-    const aspectRatio = width / height;
-    update(aspectRatio);
+    const size = entries[0].contentRect;
+    update(size);
   });
 
   onMount(() => {
-    const element = document.getElementById(elementId);
     if (element == undefined)
-      throw `useAspectRatio: element id=${elementId} nullish on mount`;
+      throw `useAspectRatio: element id=${element} nullish on mount`;
     observer.observe(element);
   });
   onCleanup(() => observer?.disconnect());

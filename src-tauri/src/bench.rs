@@ -1,7 +1,8 @@
 #![allow(dead_code)]
-mod api;
+mod color;
+mod convert;
+mod data;
 mod fractal;
-mod pixel;
 mod renderer;
 
 fn main() {
