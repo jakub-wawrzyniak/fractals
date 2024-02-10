@@ -17,7 +17,7 @@ pub struct Fractal {
 }
 
 impl Fractal {
-    const ESCAPE_RADIUS: f64 = 8.0;
+    const ESCAPE_RADIUS_POW2: f64 = 16.0;
     pub fn new(max_item_id: u32, variant: FractalVariant) -> Self {
         use FractalVariant::*;
         Self {
@@ -56,7 +56,7 @@ impl Fractal {
 
     fn in_bounds(&self, point: &Complex64) -> bool {
         let distance = point.re * point.re + point.im * point.im;
-        distance < Self::ESCAPE_RADIUS
+        distance < Self::ESCAPE_RADIUS_POW2
     }
 
     pub fn eval(&self, point: Complex64) -> ComplexItem {
