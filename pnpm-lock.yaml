@@ -2806,8 +2806,13 @@ packages:
       - terser
     dev: true
 
+<<<<<<< HEAD
   /vite-plugin-solid@2.9.1(solid-js@1.8.14)(vite@5.1.1):
     resolution: {integrity: sha512-RC4hj+lbvljw57BbMGDApvEOPEh14lwrr/GeXRLNQLcR1qnOdzOwwTSFy13Gj/6FNIZpBEl0bWPU+VYFawrqUw==}
+=======
+  /vite-plugin-solid@2.8.0(solid-js@1.8.7)(vite@4.5.2):
+    resolution: {integrity: sha512-n5FAm7ZmTl94VWUoiJCgG7bouF2NlC9CA1wY/qbVnkFbYDWk++bFWyNoU48aLJ+lMtzNeYzJypJXOHzFKxL9xA==}
+>>>>>>> main
     peerDependencies:
       '@testing-library/jest-dom': ^5.16.6 || ^5.17.0 || ^6.*
       solid-js: ^1.7.2
@@ -2820,16 +2825,63 @@ packages:
       '@types/babel__core': 7.20.5
       babel-preset-solid: 1.8.12(@babel/core@7.23.9)
       merge-anything: 5.1.7
+<<<<<<< HEAD
       solid-js: 1.8.14
       solid-refresh: 0.6.3(solid-js@1.8.14)
       vite: 5.1.1
       vitefu: 0.2.5(vite@5.1.1)
+=======
+      solid-js: 1.8.7
+      solid-refresh: 0.5.3(solid-js@1.8.7)
+      vite: 4.5.2
+      vitefu: 0.2.5(vite@4.5.2)
+>>>>>>> main
     transitivePeerDependencies:
       - supports-color
     dev: true
 
+<<<<<<< HEAD
   /vite@5.1.1:
     resolution: {integrity: sha512-wclpAgY3F1tR7t9LL5CcHC41YPkQIpKUGeIuT8MdNwNZr6OqOTLs7JX5vIHAtzqLWXts0T+GDrh9pN2arneKqg==}
+=======
+  /vite@4.5.2:
+    resolution: {integrity: sha512-tBCZBNSBbHQkaGyhGCDUGqeo2ph8Fstyp6FMSvTtsXeZSPpSMGlviAOav2hxVTqFcx8Hj/twtWKsMJXNY0xI8w==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': '>= 14'
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      esbuild: 0.18.20
+      postcss: 8.4.32
+      rollup: 3.29.4
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite@5.0.10:
+    resolution: {integrity: sha512-2P8J7WWgmc355HUMlFrwofacvr98DAjoE52BfdbwQtyLH06XKwaL/FMnmKM2crF0iX4MpmMKoDlNCB1ok7zHCw==}
+>>>>>>> main
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -2863,7 +2915,11 @@ packages:
       fsevents: 2.3.3
     dev: true
 
+<<<<<<< HEAD
   /vitefu@0.2.5(vite@5.1.1):
+=======
+  /vitefu@0.2.5(vite@4.5.2):
+>>>>>>> main
     resolution: {integrity: sha512-SgHtMLoqaeeGnd2evZ849ZbACbnwQCIwRH57t18FxcXoZop0uQu0uzlIhJBlF/eWVzuce0sHeqPcDo+evVcg8Q==}
     peerDependencies:
       vite: ^3.0.0 || ^4.0.0 || ^5.0.0
@@ -2871,7 +2927,11 @@ packages:
       vite:
         optional: true
     dependencies:
+<<<<<<< HEAD
       vite: 5.1.1
+=======
+      vite: 4.5.2
+>>>>>>> main
     dev: true
 
   /vitest@1.2.2(jsdom@23.2.0):
