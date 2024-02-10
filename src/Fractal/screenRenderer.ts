@@ -31,13 +31,13 @@ export class ScreenRenderer extends Renderer {
   complexToViewport(position: Complex): Point {
     const pixelRatio = 1 / this.pixelToComplex();
     const distance: Complex = {
-      real: position.real - this.current.center.real,
-      imaginary: position.imaginary - this.current.center.imaginary,
+      re: position.re - this.current.center.re,
+      im: position.im - this.current.center.im,
     };
 
     return {
-      x: this.width * 0.5 + distance.real * pixelRatio,
-      y: this.height * 0.5 - distance.imaginary * pixelRatio,
+      x: this.width * 0.5 + distance.re * pixelRatio,
+      y: this.height * 0.5 - distance.im * pixelRatio,
     };
   }
 
@@ -49,8 +49,8 @@ export class ScreenRenderer extends Renderer {
     };
 
     return {
-      real: this.current.center.real + change.x * pixelRatio,
-      imaginary: this.current.center.imaginary - change.y * pixelRatio,
+      re: this.current.center.re + change.x * pixelRatio,
+      im: this.current.center.im - change.y * pixelRatio,
     };
   }
 
@@ -61,10 +61,10 @@ export class ScreenRenderer extends Renderer {
       y: this.height,
     });
     return {
-      left: topLeft.real,
-      top: topLeft.imaginary,
-      right: bottomRight.real,
-      bottom: bottomRight.imaginary,
+      left: topLeft.re,
+      top: topLeft.im,
+      right: bottomRight.re,
+      bottom: bottomRight.im,
     };
   }
 }

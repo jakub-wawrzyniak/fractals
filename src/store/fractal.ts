@@ -14,7 +14,7 @@ const getHash = () => {
   const { color, variant, maxIterations, constant } = __store.fractal;
   let hash = `${variant}@${maxIterations}iters?color=${color}`;
   if (constant != null) {
-    const { real, imaginary } = constant;
+    const { re: real, im: imaginary } = constant;
     hash += `&const=(${real}+${imaginary}i)`;
   }
   return hash;

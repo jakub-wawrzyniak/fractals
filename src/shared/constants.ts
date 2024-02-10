@@ -22,12 +22,12 @@ type FractalConfig = {
   initConstant: Complex | null;
 };
 
-const noOffset: Complex = { real: 0, imaginary: 0 };
+const noOffset: Complex = { re: 0, im: 0 };
 export const FRACTAL_CONFIG = {
   Mandelbrot: {
     name: "Mandelbrot's Set",
     equation: "Zn+1 = Zn^2 + C",
-    offsetGraphInComplex: { real: -0.7, imaginary: 0 },
+    offsetGraphInComplex: { re: -0.7, im: 0 },
     initConstant: null,
   },
   JuliaSet: {
@@ -35,14 +35,14 @@ export const FRACTAL_CONFIG = {
     equation: "Zn+1 = Zn^2 + C",
     offsetGraphInComplex: noOffset,
     initConstant: {
-      real: 0.304,
-      imaginary: -0.436,
+      re: 0.304,
+      im: -0.436,
     },
   },
   BurningShip: {
     name: "Burning Ship",
     equation: "Zn+1 = (|Zr| + i|Zi|)^2 + C",
-    offsetGraphInComplex: { real: -0.3, imaginary: -0.5 },
+    offsetGraphInComplex: { re: -0.3, im: -0.5 },
     initConstant: null,
   },
   Newton: {

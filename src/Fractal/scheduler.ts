@@ -33,12 +33,12 @@ class RenderJob {
       width_px: TILE_SIZE_PX,
       height_px: TILE_SIZE_PX,
       top_left: {
-        real: bounds.left,
-        imaginary: bounds.top,
+        re: bounds.left,
+        im: bounds.top,
       },
       bottom_right: {
-        real: bounds.right,
-        imaginary: bounds.bottom,
+        re: bounds.right,
+        im: bounds.bottom,
       },
     };
   }

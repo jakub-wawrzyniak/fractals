@@ -11,15 +11,15 @@ export const FractalEquation = () => {
   const config = () => store.fractal.getConfig();
 
   const constantSign = () => {
-    return constant().imaginary < 0 ? " - " : " + ";
+    return constant().im < 0 ? " - " : " + ";
   };
 
   const constantReal = () => {
-    return constant().real.toFixed(3);
+    return constant().re.toFixed(3);
   };
 
   const constantImaginary = () => {
-    return Math.abs(constant().imaginary).toFixed(3) + "i";
+    return Math.abs(constant().im).toFixed(3) + "i";
   };
 
   return (

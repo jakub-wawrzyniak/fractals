@@ -20,7 +20,7 @@ pub struct FractalFragment {
 }
 
 #[derive(Deserialize, Clone, Copy)]
-#[serde(tag = "method")]
+#[serde(tag = "type")]
 pub enum ColorMethod {
     Linear,
     Raw,

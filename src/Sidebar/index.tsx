@@ -19,16 +19,16 @@ export const Sidebar = () => {
       <FractalEquation />
       <Show when={store.fractal.getConfig().initConstant !== null}>
         <InputRange
-          getNumber={() => constant().real}
-          setNumber={(num) => store.fractal.setConstant("real", num)}
+          getNumber={() => constant().re}
+          setNumber={(num) => store.fractal.setConstant("re", num)}
           max={BOUNDS.max}
           min={BOUNDS.min}
           label="C: real component"
           class="range-primary"
         />
         <InputRange
-          getNumber={() => constant().imaginary}
-          setNumber={(num) => store.fractal.setConstant("imaginary", num)}
+          getNumber={() => constant().im}
+          setNumber={(num) => store.fractal.setConstant("im", num)}
           max={BOUNDS.max}
           min={BOUNDS.min}
           label="C: imaginary component"

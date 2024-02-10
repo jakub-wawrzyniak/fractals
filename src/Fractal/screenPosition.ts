@@ -8,7 +8,7 @@ function easeOut(x: number): number {
 
 export function initPosition(variant: Fractal): Position {
   const center = FRACTAL_CONFIG[variant].offsetGraphInComplex;
-  return new Position(center.real, center.imaginary, 1);
+  return new Position(center.re, center.im, 1);
 }
 
 export class ScreenPosition {

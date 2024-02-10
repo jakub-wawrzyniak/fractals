@@ -37,12 +37,12 @@ export class TileManager {
   private tilesOnScreenAt(level: number) {
     const screenBounds = this.renderer.screenBoundsComplex();
     const topLeft = Tile.withPoint(level, {
-      real: screenBounds.left,
-      imaginary: screenBounds.top,
+      re: screenBounds.left,
+      im: screenBounds.top,
     });
     const bottomRight = Tile.withPoint(level, {
-      real: screenBounds.right,
-      imaginary: screenBounds.bottom,
+      re: screenBounds.right,
+      im: screenBounds.bottom,
     });
 
     const tilesHorizontally = abs(bottomRight.point.x - topLeft.point.x) + 1;

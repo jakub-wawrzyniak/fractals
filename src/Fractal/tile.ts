@@ -48,8 +48,8 @@ export class Tile extends Sprite {
 
   static withPoint(level: number, point: Complex): Tile {
     const size = 2 ** level;
-    const x = floor(point.real / size);
-    const y = floor(point.imaginary / size);
+    const x = floor(point.re / size);
+    const y = floor(point.im / size);
     return Tile.get(x, y, level);
   }
 
@@ -68,8 +68,8 @@ export class Tile extends Sprite {
   center(): Complex {
     const sizeComplex = 2 ** this.level;
     return {
-      real: (this.point.x + 0.5) * sizeComplex,
-      imaginary: (this.point.y + 0.5) * sizeComplex,
+      re: (this.point.x + 0.5) * sizeComplex,
+      im: (this.point.y + 0.5) * sizeComplex,
     };
   }
 
@@ -95,8 +95,8 @@ export class Tile extends Sprite {
   }
 
   updatePosition(renderer: ScreenRenderer) {
-    const { left: real, bottom: imaginary } = this.bounds();
-    const positionComplex = { real, imaginary };
+    const { left: re, bottom: im } = this.bounds();
+    const positionComplex = { re, im };
     const positionViewport = renderer.complexToViewport(positionComplex);
     const scale = 2 ** (this.level - renderer.current.level);
     this.scale = { x: scale, y: scale };

@@ -7,16 +7,40 @@ export type FractalFragment = {
   height_px: number;
 };
 
+export type FractalVariant =
+  | {
+      type: Omit<Fractal, "JuliaSet">;
+    }
+  | {
+      type: "JuliaSet";
+      constant: Complex;
+    };
+
+export type ColorMethod =
+  | {
+      type: "Linear" | "Raw";
+    }
+  | {
+      type: "Exponential";
+      power: number;
+    };
+
+export type ColorConfig = {
+  color: string;
+  brightness: number;
+  anti_alias: boolean;
+  method: ColorMethod;
+};
+
 export type FractalConfig = {
-  variant: Fractal;
+  variant: FractalVariant;
   max_iterations: number;
-  constant: Complex | null;
 };
 
 export type CalcTileRequest = {
   fragment: FractalFragment;
   fractal: FractalConfig;
-  color: string;
+  color: ColorConfig;
 };
 
 export type ExportFractalRequest = CalcTileRequest & {
