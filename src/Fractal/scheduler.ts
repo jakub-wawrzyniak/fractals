@@ -50,11 +50,13 @@ class RenderJob {
     if ((this.status as string) === "canceled") return;
     // ^Requests can be canceled while being rendered
 
-    if (this.onResolve === undefined)
-      throw "Can't resolve a promise that was not awaited";
-    this.onResolve({
-      texture: Texture.from(dataUrl),
-      renderedForConfig: hash,
+    Texture.fromURL(dataUrl).then((texture) => {
+      if (this.onResolve === undefined)
+        throw "Can't resolve a promise that was not awaited";
+      this.onResolve({
+        texture,
+        renderedForConfig: hash,
+      });
     });
     this.status = "done";
   }
