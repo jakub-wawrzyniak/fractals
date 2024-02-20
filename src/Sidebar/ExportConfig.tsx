@@ -1,7 +1,6 @@
 import { Show } from "solid-js";
 import { onExportRequest } from "../api";
 import { HasChild } from "../shared";
-import { ExportSizePicker } from "./ExportSizePicker";
 import { AppStore, store } from "../store";
 
 type Status = AppStore["export"]["status"];
@@ -36,13 +35,13 @@ export const ExportConfig = () => {
   };
   return (
     <form
-      class="grow flex flex-col gap-3 justify-end pb-2"
+      class="grow flex flex-col gap-3 justify-end"
       onSubmit={(e) => e.preventDefault()}
     >
       <h4 class="font-poppins font-regular text-xl text-center">
         Export your fractal
       </h4>
-      <ExportSizePicker />
+      {/* <ExportSizePicker /> */}
       <div class="flex gap-1 items-center">
         <ButtonExportSource exportFrom="screen">
           the whole screen
