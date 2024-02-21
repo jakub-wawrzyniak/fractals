@@ -1,14 +1,21 @@
 import { Show } from "solid-js";
-import { HasClass, Minus, Plus } from "../shared";
+import { Minus, Plus } from "../shared";
+import { InputRange, InputRangeConfig } from "./InputRange";
 
-type InputNumberProps = HasClass & {
+type RangeConfig =
+  | ({
+      withRangeSlider?: false;
+    } & Partial<InputRangeConfig>)
+  | ({
+      withRangeSlider: true;
+    } & InputRangeConfig);
+
+type InputNumberProps = RangeConfig & {
   label: string;
   getNumber: () => number;
   setNumber: (value: number) => void;
   format: "int" | "float";
-  step?: number;
-  min?: number;
-  max?: number;
+  unit?: string;
   help?: {
     header: string;
     description: string;
@@ -36,9 +43,8 @@ export const InputNumber = (props: InputNumberProps) => {
     props.setNumber(checked);
   };
 
-  type HasTarget = { target: HTMLInputElement };
-  const onInput = (event: HasTarget) => {
-    const parsed = parseNum(event.target.value);
+  const onInput = (value: string) => {
+    const parsed = parseNum(value);
     if (typeof parsed !== "number" || isNaN(parsed)) throw "not a num";
     const checked = clipToBounds(parsed);
     props.setNumber(checked);
@@ -47,7 +53,7 @@ export const InputNumber = (props: InputNumberProps) => {
   const stepButtonClass =
     "btn btn-sm btn-neutral btn-square grid place-items-center mx-0";
   return (
-    <label class={`form-control min-w-0 w-full ${props.class ?? ""}`}>
+    <label class={`form-control min-w-0 w-full`}>
       <div class="label py-1">
         <span class="label-text">{props.label}</span>
         <Show when={props.help !== undefined}>
@@ -56,14 +62,14 @@ export const InputNumber = (props: InputNumberProps) => {
           </span>
         </Show>
       </div>
-      <div class="box-border flex items-center input input-bordered border-base-content pr-1.5 gap-1">
+      <div class="box-border flex items-center input input-bordered border-base-content pr-1.5 gap-1 mb-2">
         <input
           type="number"
-          value={props.getNumber()}
-          onInput={onInput}
+          class="flex-1 no-spinner min-w-0"
           min={props.min}
           max={props.max}
-          class="flex-1 no-spinner min-w-0"
+          value={props.getNumber()}
+          onInput={(e) => onInput(e.target.value)}
         />
         <Show when={props.step !== undefined}>
           <button
@@ -82,6 +88,14 @@ export const InputNumber = (props: InputNumberProps) => {
           </button>
         </Show>
       </div>
+
+      <Show when={props.withRangeSlider}>
+        <InputRange
+          {...(props as InputRangeConfig)}
+          number={props.getNumber}
+          onInput={onInput}
+        />
+      </Show>
     </label>
   );
 };

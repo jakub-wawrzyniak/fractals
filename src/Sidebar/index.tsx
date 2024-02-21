@@ -1,7 +1,6 @@
 import { ExportConfig } from "./ExportConfig";
 import { Show } from "solid-js";
 import { FractalEquation } from "./FractalEquation";
-import { InputRange } from "./InputRange";
 import { FractalSelectVariant } from "./FractalSelectVariant";
 import { FractalColorPicker } from "./FractalColorPicker";
 import { InputNumber } from "./InputNumber";
@@ -18,21 +17,25 @@ export const Sidebar = () => {
       <FractalSelectVariant />
       <FractalEquation />
       <Show when={store.fractal.getConfig().initConstant !== null}>
-        <InputRange
+        <InputNumber
+          step={0.005}
+          format="float"
+          withRangeSlider={true}
           getNumber={() => constant().re}
           setNumber={(num) => store.fractal.setConstant("re", num)}
           max={BOUNDS.max}
           min={BOUNDS.min}
           label="C: real component"
-          class="range-primary"
         />
-        <InputRange
+        <InputNumber
+          step={0.005}
+          format="float"
+          withRangeSlider={true}
           getNumber={() => constant().im}
           setNumber={(num) => store.fractal.setConstant("im", num)}
           max={BOUNDS.max}
           min={BOUNDS.min}
           label="C: imaginary component"
-          class="range-primary"
           unit="i"
         />
       </Show>
@@ -44,7 +47,6 @@ export const Sidebar = () => {
           getNumber={() => store.fractal.get.maxIterations}
           setNumber={(count) => store.fractal.set("maxIterations", count)}
           label="How large is infinity"
-          class="flex-1"
           help={{
             header: "sorry... what?",
             description: "yeah, I barely get it myself ;-;",
