@@ -20,10 +20,12 @@ export const InputRange = (props: InputNumberProps) => {
 
   return (
     <label class="form-control w-full">
-      <div class="label">
-        <span class="label-text">{props.label}</span>
-      </div>
-      <InputNumber {...props} step={step} label="" class="mb-2 text-left" />
+      <InputNumber
+        {...props}
+        format="float"
+        class="mb-2 text-left"
+        step={step}
+      />
       <input
         type="range"
         class={`range range-xs ${props.class ?? ""}`}

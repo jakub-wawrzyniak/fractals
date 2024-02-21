@@ -14,7 +14,7 @@ export const Sidebar = () => {
   };
   const constant = () => store.fractal.getConstantOrThrow("Sidebar");
   return (
-    <aside class="w-[20vw] min-w-[370px] p-6 flex flex-col gap-2">
+    <aside class="w-[400px] p-6 flex flex-col gap-2">
       <FractalSelectVariant />
       <FractalEquation />
       <Show when={store.fractal.getConfig().initConstant !== null}>
@@ -36,12 +36,19 @@ export const Sidebar = () => {
           unit="i"
         />
       </Show>
-      <div class="flex gap-1 items-end">
+      <div class="grid grid-rows-[auto_auto] gap-2">
         <InputNumber
+          min={0}
+          step={100}
+          format="int"
           getNumber={() => store.fractal.get.maxIterations}
           setNumber={(count) => store.fractal.set("maxIterations", count)}
-          label="How large is Infinity?"
+          label="How large is infinity"
           class="flex-1"
+          help={{
+            header: "sorry... what?",
+            description: "yeah, I barely get it myself ;-;",
+          }}
         />
         <FractalColorPicker />
       </div>

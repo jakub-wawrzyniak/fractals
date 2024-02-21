@@ -25,7 +25,7 @@ type FractalConfig = {
 const noOffset: Complex = { re: 0, im: 0 };
 export const FRACTAL_CONFIG = {
   Mandelbrot: {
-    name: "Mandelbrot's Set",
+    name: "Mandelbrot Set",
     equation: "Zn+1 = Zn^2 + C",
     offsetGraphInComplex: { re: -0.7, im: 0 },
     initConstant: null,
@@ -46,7 +46,7 @@ export const FRACTAL_CONFIG = {
     initConstant: null,
   },
   Newton: {
-    name: "Newton's fractal",
+    name: "Newton fractal",
     equation: "Zn+1 = (2 * Zn^3 + 1) / 3Zn^2",
     offsetGraphInComplex: noOffset,
     initConstant: null,

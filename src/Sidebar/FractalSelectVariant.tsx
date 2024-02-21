@@ -14,7 +14,7 @@ export const FractalSelectVariant = () => {
       <h3 class="font-poppins font-regular text-left text-xl">
         {store.fractal.getConfig().name}
       </h3>
-      <div class="flex gap-2">
+      <div class="flex gap-1">
         <div class="dropdown dropdown-end">
           <IconButton>
             <Arrow class="group-focus:rotate-180" />
