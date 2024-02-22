@@ -22,7 +22,7 @@ export const Fractal = () => {
   });
 
   createEffect(() => {
-    const hash = store.fractal.getHash();
+    const hash = store.getHash();
     const variant = store.fractal.get.variant;
     fractalApp.updateConfig(hash, variant);
   });

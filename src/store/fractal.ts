@@ -1,6 +1,6 @@
 import { batch } from "solid-js";
-import { Complex, FRACTAL_CONFIG, Fractal } from "../shared";
-import { AppStore, __setStore, __store, initConstant } from "./store";
+import { Complex, FRACTAL_CONFIG, Fractal, complexToString } from "../shared";
+import { __setStore, __store, initConstant } from "./store";
 
 const getConfig = () => FRACTAL_CONFIG[__store.fractal.variant];
 const getConstantOrThrow = (where: string) => {
@@ -10,12 +10,12 @@ const getConstantOrThrow = (where: string) => {
   return constant;
 };
 
-const getHash = () => {
-  const { color, variant, maxIterations, constant } = __store.fractal;
-  let hash = `${variant}@${maxIterations}iters?color=${color}`;
+const getFractalHash = () => {
+  const { variant, maxIterations, constant } = __store.fractal;
+  let hash = `${variant}@${maxIterations}iters`;
   if (constant != null) {
-    const { re: real, im: imaginary } = constant;
-    hash += `&const=(${real}+${imaginary}i)`;
+    hash += "&const=";
+    hash += complexToString(constant);
   }
   return hash;
 };
@@ -31,20 +31,16 @@ const changeFractalVariant = (variant: Fractal) => {
   });
 };
 
-type DirectSetters = "color" | "maxIterations";
-const setFractal = <Key extends DirectSetters>(
-  key: Key,
-  value: AppStore["fractal"][Key]
-) => {
-  __setStore("fractal", key, value);
+const setMaxIterations = (iters: number) => {
+  __setStore("fractal", "maxIterations", iters);
 };
 
 export const fractal = {
   get: __store.fractal,
-  getHash,
+  getFractalHash,
   getConfig,
   getConstantOrThrow,
   changeFractalVariant,
-  set: setFractal,
+  setMaxIterations,
   setConstant,
 };

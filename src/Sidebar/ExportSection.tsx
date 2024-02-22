@@ -2,6 +2,7 @@ import { Show } from "solid-js";
 import { onExportRequest } from "../api";
 import { HasChild } from "../shared";
 import { AppStore, store } from "../store";
+import { SectionHeader } from "./SectionHeader";
 
 type Status = AppStore["export"]["status"];
 const userFeedback: Record<Status, string> = {
@@ -28,7 +29,7 @@ const ButtonExportSource = (props: ExportSource) => {
   );
 };
 
-export const ExportConfig = () => {
+export const ExportSection = () => {
   const status = () => store.exportConfig.get.status;
   const waiting = () => {
     return status() === "exporting" || status() === "pickingFilePath";
@@ -38,10 +39,7 @@ export const ExportConfig = () => {
       class="grow flex flex-col gap-3 justify-end"
       onSubmit={(e) => e.preventDefault()}
     >
-      <h4 class="font-poppins font-regular text-xl text-center">
-        Export your fractal
-      </h4>
-      {/* <ExportSizePicker /> */}
+      <SectionHeader title="Export your fractal" />
       <div class="flex gap-1 items-center">
         <ButtonExportSource exportFrom="screen">
           the whole screen

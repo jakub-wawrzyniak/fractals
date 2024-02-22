@@ -25,3 +25,7 @@ export function distanceManhatan(point1: Complex, point2: Complex) {
   const imaginaryDistance = abs(point1.im - point2.im);
   return realDistance + imaginaryDistance;
 }
+
+export function complexToString({ re, im }: Complex) {
+  return `(${re}+${im}i)`;
+}

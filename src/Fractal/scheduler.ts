@@ -45,7 +45,7 @@ class RenderJob {
 
   async run() {
     this.status = "rendering";
-    const hash = store.fractal.getHash();
+    const hash = store.getHash();
     const dataUrl = await calcTile(this.request());
     if ((this.status as string) === "canceled") return;
     // ^Requests can be canceled while being rendered

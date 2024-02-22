@@ -6,12 +6,20 @@ import {
   Size,
   INIT_FRACTAL,
   FRACTAL_CONFIG,
+  ColoringMethod,
+  INIT_COLORING_METHOD,
 } from "../shared";
 
 export type AppStore = {
   viewer: Size;
-  fractal: {
+  coloring: {
     color: string;
+    method: ColoringMethod;
+    antialiasing: boolean;
+    brightness: number;
+    exponent: number;
+  };
+  fractal: {
     maxIterations: number;
     constant: Complex | null;
     variant: Fractal;
@@ -48,8 +56,14 @@ const initStore: AppStore = {
     width: 800,
     height: 600,
   },
-  fractal: {
+  coloring: {
+    method: INIT_COLORING_METHOD,
     color: "#ff0000",
+    antialiasing: true,
+    brightness: 4.0,
+    exponent: 1.5,
+  },
+  fractal: {
     maxIterations: 128,
     variant: INIT_FRACTAL,
     constant: initConstant(INIT_FRACTAL),

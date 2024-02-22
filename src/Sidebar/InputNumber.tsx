@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import { Minus, Plus } from "../shared";
+import { IconButton, Minus, Plus } from "../shared";
 import { InputRange, InputRangeConfig } from "./InputRange";
 
 type RangeConfig =
@@ -50,8 +50,6 @@ export const InputNumber = (props: InputNumberProps) => {
     props.setNumber(checked);
   };
 
-  const stepButtonClass =
-    "btn btn-sm btn-neutral btn-square grid place-items-center mx-0";
   return (
     <label class={`form-control min-w-0 w-full`}>
       <div class="label py-1">
@@ -72,20 +70,18 @@ export const InputNumber = (props: InputNumberProps) => {
           onInput={(e) => onInput(e.target.value)}
         />
         <Show when={props.step !== undefined}>
-          <button
-            class={stepButtonClass}
+          <IconButton
             disabled={props.getNumber() === props.min}
             onClick={() => changeBy(-props.step!)}
           >
             <Minus />
-          </button>
-          <button
-            class={stepButtonClass}
+          </IconButton>
+          <IconButton
             disabled={props.getNumber() === props.max}
             onClick={() => changeBy(props.step!)}
           >
             <Plus />
-          </button>
+          </IconButton>
         </Show>
       </div>
 
