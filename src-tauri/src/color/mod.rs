@@ -1,7 +1,9 @@
+mod hsl;
 mod utils;
 pub use self::utils::hex_to_color;
 use self::utils::*;
 use crate::{
+    color::hsl::gradient,
     data::{ColorMethod, Rgb},
     fractal::ComplexItem,
 };
@@ -81,7 +83,8 @@ impl ColorCreator {
             Exponential { power } => self.exponential(item, power),
         };
 
-        let luma = base * self.brightness;
-        blend_with_color(luma, &self.color)
+        gradient(base)
+        // let luma = base * self.brightness;
+        // blend_with_color(luma, &self.color)
     }
 }
