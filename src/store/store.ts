@@ -13,11 +13,14 @@ import {
 export type AppStore = {
   viewer: Size;
   coloring: {
-    color: string;
     method: ColoringMethod;
     antialiasing: boolean;
     brightness: number;
     exponent: number;
+    color: {
+      hex_end: string;
+      hex_start: string;
+    };
   };
   fractal: {
     maxIterations: number;
@@ -58,10 +61,13 @@ const initStore: AppStore = {
   },
   coloring: {
     method: INIT_COLORING_METHOD,
-    color: "#ff0000",
     antialiasing: true,
     brightness: 4.0,
     exponent: 1.5,
+    color: {
+      hex_start: "#ff0000",
+      hex_end: "#ffff00",
+    },
   },
   fractal: {
     maxIterations: 128,

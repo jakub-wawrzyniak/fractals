@@ -1,6 +1,6 @@
 import { ColorSectionHeader } from "./ColorSectionHeader";
 import { AntiAliasing, ColoringMethod } from "./ColorInline";
-import { ColorPicker } from "./FractalColorPicker";
+import { ColorPicker } from "./ColorPicker";
 
 export const ColorSection = () => {
   return (
