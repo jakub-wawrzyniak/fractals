@@ -173,19 +173,28 @@ mod tests {
         bottom_right: Complex::new(2.5, -2.5),
     };
 
-    const COLOR: ColorCreator =
-        ColorCreator::new(image::Rgb([255, 0, 0]), 4.0, true, ColorMethod::Linear);
+    fn get_color() -> ColorCreator {
+        ColorCreator::new(
+            ColorHex {
+                hex_start: "#ff0000".to_owned(),
+                hex_end: "#FFFF00".to_owned(),
+            },
+            4.0,
+            true,
+            ColorMethod::Linear,
+        )
+    }
 
     fn mandelbrot() -> FractalImage {
         FractalImage {
-            color: COLOR,
+            color: get_color(),
             fragment: FRAGMENT,
             fractal: Fractal::new(1024, Mandelbrot),
         }
     }
-    fn julia_set(color: ColorCreator) -> FractalImage {
+    fn julia_set() -> FractalImage {
         FractalImage {
-            color,
+            color: get_color(),
             fragment: FRAGMENT,
             fractal: Fractal::new(
                 1024,
@@ -198,7 +207,7 @@ mod tests {
     fn burning_ship() -> FractalImage {
         FractalImage {
             fragment: FRAGMENT,
-            color: COLOR,
+            color: get_color(),
             fractal: Fractal::new(1024, BurningShip),
         }
     }
@@ -206,7 +215,7 @@ mod tests {
     fn newton() -> FractalImage {
         FractalImage {
             fragment: FRAGMENT,
-            color: COLOR,
+            color: get_color(),
             fractal: Fractal::new(1024, Newton),
         }
     }
@@ -218,7 +227,7 @@ mod tests {
 
     #[divan::bench(sample_count = 30)]
     fn rendered_julia_set() {
-        julia_set(divan::black_box(COLOR)).render();
+        julia_set().render();
     }
 
     #[divan::bench(sample_count = 30)]
@@ -285,7 +294,7 @@ mod tests {
 
     #[test]
     fn render_julia_saves() {
-        julia_set(COLOR).render().save("./color.png").unwrap();
+        julia_set().render().save("./color.png").unwrap();
     }
 
     #[test]

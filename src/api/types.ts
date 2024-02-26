@@ -26,10 +26,13 @@ export type ColorMethod =
     };
 
 export type ColorConfig = {
-  color: string;
   brightness: number;
   anti_alias: boolean;
   method: ColorMethod;
+  color: {
+    hex_start: string;
+    hex_end: string;
+  };
 };
 
 export type FractalConfig = {

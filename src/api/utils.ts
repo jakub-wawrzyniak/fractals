@@ -2,7 +2,12 @@ import { store } from "../store";
 import { CalcTileRequest, ColorMethod, FractalVariant } from "./types";
 
 export const getColorConfig = (): CalcTileRequest["color"] => {
-  const { method: variant, antialiasing, ...config } = store.coloring.get;
+  const {
+    method: variant,
+    antialiasing,
+    color,
+    ...config
+  } = store.coloring.get;
   let method: ColorMethod;
   if (variant === "Exponential") {
     method = {
@@ -14,6 +19,10 @@ export const getColorConfig = (): CalcTileRequest["color"] => {
   return {
     method,
     anti_alias: antialiasing,
+    color: {
+      hex_start: color,
+      hex_end: color,
+    },
     ...config,
   };
 };

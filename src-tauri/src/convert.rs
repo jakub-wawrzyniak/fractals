@@ -1,4 +1,3 @@
-use crate::color::hex_to_color;
 use crate::data::{ColorConfig, ExportRequest, FractalConfig};
 use crate::fractal::*;
 use crate::renderer::FractalImage;
@@ -7,7 +6,7 @@ use crate::{color::ColorCreator, data::TileRequest};
 impl From<ColorConfig> for ColorCreator {
     fn from(value: ColorConfig) -> Self {
         ColorCreator::new(
-            hex_to_color(value.color),
+            value.color,
             value.brightness,
             value.anti_alias,
             value.method,

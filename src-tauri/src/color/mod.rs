@@ -1,10 +1,9 @@
 mod hsl;
 mod utils;
-pub use self::utils::hex_to_color;
+use self::hsl::*;
 use self::utils::*;
 use crate::{
-    color::hsl::gradient,
-    data::{ColorMethod, Rgb},
+    data::{ColorHex, ColorMethod, Rgb},
     fractal::ComplexItem,
 };
 
@@ -35,19 +34,22 @@ impl ComplexItem {
 
 #[derive(Clone, Copy)]
 pub struct ColorCreator {
-    color: Rgb,
+    gradient: ColorGradient,
     brightness: f64,
     anti_alias: bool,
     method: ColorMethod,
 }
 
 impl ColorCreator {
-    pub const fn new(color: Rgb, brightness: f64, anti_alias: bool, method: ColorMethod) -> Self {
+    pub fn new(color: ColorHex, brightness: f64, anti_alias: bool, method: ColorMethod) -> Self {
         Self {
-            color,
             brightness,
             anti_alias,
             method,
+            gradient: ColorGradient::new(
+                &hex_to_color(color.hex_start),
+                &hex_to_color(color.hex_end),
+            ),
         }
     }
 
@@ -83,8 +85,7 @@ impl ColorCreator {
             Exponential { power } => self.exponential(item, power),
         };
 
-        gradient(base)
-        // let luma = base * self.brightness;
-        // blend_with_color(luma, &self.color)
+        let luma = base * self.brightness;
+        self.gradient.color_for(luma)
     }
 }

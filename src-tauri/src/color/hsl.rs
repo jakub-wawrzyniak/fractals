@@ -39,23 +39,7 @@ pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> Rgb {
     Rgb::from([clip(r * 256.0), clip(g * 256.0), clip(b * 256.0)])
 }
 
-fn transition(from: f64, to: f64, step: f64) -> f64 {
-    let change = to - from;
-    from + change * step
-}
-
-pub fn gradient(step: f64) -> Rgb {
-    let step = step.min(1.0).max(0.0);
-    let from = (0.0, 1.0, 0.0);
-    let to = (0.2, 1.0, 1.0);
-    let (h, s, l) = (
-        transition(from.0, to.0, step),
-        transition(from.1, to.1, step),
-        transition(from.2, to.2, step),
-    );
-    hsl_to_rgb(h, s, l)
-}
-
+/// Adapted from https://www.rapidtables.com/convert/color/rgb-to-hsl.html
 fn rgb_to_hue(rgb: &Rgb) -> f64 {
     let r = (rgb.0[0] as f64) / 255.0;
     let g = (rgb.0[1] as f64) / 255.0;
@@ -77,6 +61,36 @@ fn rgb_to_hue(rgb: &Rgb) -> f64 {
         SCALE * (((r - g) / delta) + 4.0)
     } else {
         panic!("Comparison error (neither is largest)")
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ColorGradient {
+    from_hsl: [f64; 3],
+    to_hsl: [f64; 3],
+}
+
+impl ColorGradient {
+    pub fn new(from: &Rgb, to: &Rgb) -> Self {
+        Self {
+            from_hsl: [rgb_to_hue(from), 1.0, 0.0],
+            to_hsl: [rgb_to_hue(to), 1.0, 1.0],
+        }
+    }
+
+    fn transition(&self, channel_id: usize, step: f64) -> f64 {
+        let from = self.from_hsl[channel_id];
+        let to = self.to_hsl[channel_id];
+        let change = to - from;
+        from + change * step
+    }
+
+    pub fn color_for(&self, step: f64) -> Rgb {
+        hsl_to_rgb(
+            self.transition(0, step),
+            self.transition(1, step),
+            self.transition(2, step),
+        )
     }
 }
 
@@ -119,31 +133,6 @@ mod tests {
         assert!(r < 5, "Too much red ({r})");
         assert!(g > 200, "Not enough green({g})");
         assert!(b < 5, "Too much blue ({r})");
-    }
-
-    #[test]
-    fn transition_maintains_bounds() {
-        let from = 0.0;
-        let to = 40.0;
-        let step_start = 0.0;
-        let step_end = 1.0;
-
-        let out_start = transition(from, to, step_start);
-        let out_end = transition(from, to, step_end);
-
-        assert_eq!(out_start, from);
-        assert_eq!(out_end, to);
-    }
-
-    #[test]
-    fn transition_middle_is_average() {
-        let from = 0.0;
-        let to = 40.0;
-        let step = 0.5;
-
-        let out = transition(from, to, step);
-
-        assert_eq!(out, 20.0);
     }
 
     #[test]

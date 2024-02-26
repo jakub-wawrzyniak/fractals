@@ -28,8 +28,14 @@ pub enum ColorMethod {
 }
 
 #[derive(Deserialize, Clone)]
+pub struct ColorHex {
+    pub hex_start: String,
+    pub hex_end: String,
+}
+
+#[derive(Deserialize, Clone)]
 pub struct ColorConfig {
-    pub color: String,
+    pub color: ColorHex,
     pub brightness: f64,
     pub anti_alias: bool,
     pub method: ColorMethod,
