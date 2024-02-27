@@ -46,7 +46,7 @@ fn rgb_to_hue(rgb: &Rgb) -> f64 {
     let b = (rgb.0[2] as f64) / 255.0;
 
     let largest = r.max(g).max(b);
-    let smallest = r.min(g).min(g);
+    let smallest = r.min(g).min(b);
     let delta = largest - smallest;
     if delta == 0.0 {
         return 0.0; // Grayscale, saturation == 0
@@ -144,8 +144,15 @@ mod tests {
 
     #[test]
     fn detects_blue() {
-        let red = Rgb::from([0, 0, 255]);
-        let hue = rgb_to_hue(&red);
+        let blue = Rgb::from([0, 0, 255]);
+        let hue = rgb_to_hue(&blue);
         assert_eq!(hue, 2.0 / 3.0);
+    }
+
+    #[test]
+    fn detects_yellow() {
+        let yellow = Rgb::from([255, 255, 0]);
+        let hue = rgb_to_hue(&yellow);
+        assert_eq!(hue, 1.0 / 6.0);
     }
 }
