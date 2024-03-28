@@ -39,8 +39,15 @@ pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> Rgb {
     Rgb::from([clip(r * 256.0), clip(g * 256.0), clip(b * 256.0)])
 }
 
+#[derive(PartialEq, Debug)]
+enum HueResult {
+    Hue(f64),
+    Grayscale,
+}
+
 /// Adapted from https://www.rapidtables.com/convert/color/rgb-to-hsl.html
-fn rgb_to_hue(rgb: &Rgb) -> f64 {
+fn rgb_to_hue(rgb: &Rgb) -> HueResult {
+    use HueResult::*;
     let r = (rgb.0[0] as f64) / 255.0;
     let g = (rgb.0[1] as f64) / 255.0;
     let b = (rgb.0[2] as f64) / 255.0;
@@ -49,11 +56,11 @@ fn rgb_to_hue(rgb: &Rgb) -> f64 {
     let smallest = r.min(g).min(b);
     let delta = largest - smallest;
     if delta == 0.0 {
-        return 0.0; // Grayscale, saturation == 0
+        return Grayscale; // Grayscale, saturation == 0
     }
 
     const SCALE: f64 = 1.0 / 6.0;
-    if largest == r {
+    let value = if largest == r {
         SCALE * (((g - b) / delta) % 6.0)
     } else if largest == g {
         SCALE * (((b - r) / delta) + 2.0)
@@ -61,7 +68,9 @@ fn rgb_to_hue(rgb: &Rgb) -> f64 {
         SCALE * (((r - g) / delta) + 4.0)
     } else {
         panic!("Comparison error (neither is largest)")
-    }
+    };
+
+    Hue(value)
 }
 
 #[derive(Clone, Copy)]
@@ -73,8 +82,16 @@ pub struct ColorGradient {
 impl ColorGradient {
     pub fn new(from: &Rgb, to: &Rgb) -> Self {
         Self {
-            from_hsl: [rgb_to_hue(from), 1.0, 0.0],
-            to_hsl: [rgb_to_hue(to), 1.0, 1.0],
+            from_hsl: Self::rgb_to_hsl(from, 0.0),
+            to_hsl: Self::rgb_to_hsl(to, 1.0),
+        }
+    }
+
+    fn rgb_to_hsl(input: &Rgb, brightness: f64) -> [f64; 3] {
+        use HueResult::*;
+        match rgb_to_hue(input) {
+            Grayscale => [0.0, 0.0, brightness],
+            Hue(hue) => [hue, 1.0, brightness],
         }
     }
 
@@ -85,9 +102,25 @@ impl ColorGradient {
         from + change * step
     }
 
+    /// Allows the hue to loop around, when such operation
+    /// yealds a shorter distance between hues
+    /// (since hue=0.0 is close to 1.0)
+    fn transition_hue(&self, channel_id: usize, step: f64) -> f64 {
+        let from = self.from_hsl[channel_id];
+        let to = self.to_hsl[channel_id];
+        let mut change = to - from; // values in range < -1, +1 >
+        if change > 0.5 {
+            // Transition the opposite way, and loop around
+            change -= 1.0;
+        } else if change < -0.5 {
+            change += 1.0;
+        }
+        (from + change * step + 1.0) % 1.0
+    }
+
     pub fn color_for(&self, step: f64) -> Rgb {
         hsl_to_rgb(
-            self.transition(0, step),
+            self.transition_hue(0, step),
             self.transition(1, step),
             self.transition(2, step),
         )
@@ -98,6 +131,7 @@ impl ColorGradient {
 mod tests {
     #[allow(unused)]
     use super::*;
+    use HueResult::*;
 
     #[test]
     fn converts_to_black() {
@@ -137,22 +171,33 @@ mod tests {
 
     #[test]
     fn detects_red() {
-        let red = Rgb::from([255, 0, 0]);
-        let hue = rgb_to_hue(&red);
-        assert_eq!(hue, 0.0);
+        let input = Rgb::from([255, 0, 0]);
+        let got = rgb_to_hue(&input);
+        let expect = Hue(0.0);
+        assert_eq!(got, expect);
     }
 
     #[test]
     fn detects_blue() {
-        let blue = Rgb::from([0, 0, 255]);
-        let hue = rgb_to_hue(&blue);
-        assert_eq!(hue, 2.0 / 3.0);
+        let input = Rgb::from([0, 0, 255]);
+        let got = rgb_to_hue(&input);
+        let expect = Hue(2.0 / 3.0);
+        assert_eq!(got, expect);
     }
 
     #[test]
     fn detects_yellow() {
-        let yellow = Rgb::from([255, 255, 0]);
-        let hue = rgb_to_hue(&yellow);
-        assert_eq!(hue, 1.0 / 6.0);
+        let input = Rgb::from([255, 255, 0]);
+        let got = rgb_to_hue(&input);
+        let expect = Hue(1.0 / 6.0);
+        assert_eq!(got, expect);
+    }
+
+    #[test]
+    fn detects_gray() {
+        let input = Rgb::from([134, 134, 134]);
+        let got = rgb_to_hue(&input);
+        let expect = Grayscale;
+        assert_eq!(got, expect);
     }
 }
