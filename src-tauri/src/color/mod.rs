@@ -18,6 +18,11 @@ impl ComplexItem {
     }
 
     fn normalized_no_aa(&self) -> f64 {
+        if self.index == self.max_index {
+            return 0.0;
+            // TODO: this could be parametrized
+        }
+
         self.index / self.max_index
     }
 
