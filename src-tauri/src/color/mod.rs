@@ -82,12 +82,24 @@ impl ColorCreator {
         norm.powf(pow)
     }
 
+    fn stripes(&self, item: &ComplexItem) -> f64 {
+        let in_fractal = item.index == item.max_index;
+        let point_out_of_bounds = item.index == 0.0;
+        if in_fractal || point_out_of_bounds {
+            return 0.0;
+            // TODO: this could be parametrized
+        }
+        let aa = item.anti_alias();
+        (-aa).powf(3.0)
+    }
+
     pub fn get_pixel(&self, item: &ComplexItem) -> Rgb {
         use ColorMethod::*;
         let base = match self.method {
             Raw => self.raw(item),
             Linear => self.linear(item),
             Exponential { power } => self.exponential(item, power),
+            Stripes => self.stripes(item),
         };
 
         let luma = base * self.brightness;

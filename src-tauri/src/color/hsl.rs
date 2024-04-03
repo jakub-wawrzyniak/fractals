@@ -131,6 +131,7 @@ impl ColorGradient {
 mod tests {
     #[allow(unused)]
     use super::*;
+    #[allow(unused)]
     use HueResult::*;
 
     #[test]

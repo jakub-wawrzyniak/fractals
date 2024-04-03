@@ -12,7 +12,12 @@ export const INIT_VIEWER_SIZE: Size = {
   width: 800,
   height: 600,
 };
-export const COLORING_METHODS = ["Raw", "Linear", "Exponential"] as const;
+export const COLORING_METHODS = [
+  "Raw",
+  "Linear",
+  "Exponential",
+  "Stripes",
+] as const;
 export const INIT_COLORING_METHOD = COLORING_METHODS[1];
 
 export type ColoringMethod = (typeof COLORING_METHODS)[number];

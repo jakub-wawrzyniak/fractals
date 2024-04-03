@@ -18,7 +18,7 @@ export type FractalVariant =
 
 export type ColorMethod =
   | {
-      type: "Linear" | "Raw";
+      type: "Linear" | "Raw" | "Stripes";
     }
   | {
       type: "Exponential";

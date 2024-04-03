@@ -22,8 +22,9 @@ pub struct FractalFragment {
 #[derive(Deserialize, Clone, Copy)]
 #[serde(tag = "type")]
 pub enum ColorMethod {
-    Linear,
     Raw,
+    Linear,
+    Stripes,
     Exponential { power: f64 },
 }
 

@@ -62,8 +62,8 @@ const initStore: AppStore = {
   coloring: {
     method: INIT_COLORING_METHOD,
     antialiasing: true,
-    brightness: 4.0,
-    exponent: 1.5,
+    brightness: 1.0,
+    exponent: 0.8,
     color: {
       hex_start: "#ff0000",
       hex_end: "#ffff00",
