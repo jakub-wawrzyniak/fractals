@@ -1,8 +1,9 @@
+mod hsl;
 mod utils;
-pub use self::utils::hex_to_color;
+use self::hsl::*;
 use self::utils::*;
 use crate::{
-    data::{ColorMethod, Rgb},
+    data::{ColorHex, ColorMethod, Rgb},
     fractal::ComplexItem,
 };
 
@@ -17,6 +18,11 @@ impl ComplexItem {
     }
 
     fn normalized_no_aa(&self) -> f64 {
+        if self.index == self.max_index {
+            return 0.0;
+            // TODO: this could be parametrized
+        }
+
         self.index / self.max_index
     }
 
@@ -33,19 +39,22 @@ impl ComplexItem {
 
 #[derive(Clone, Copy)]
 pub struct ColorCreator {
-    color: Rgb,
+    gradient: ColorGradient,
     brightness: f64,
     anti_alias: bool,
     method: ColorMethod,
 }
 
 impl ColorCreator {
-    pub const fn new(color: Rgb, brightness: f64, anti_alias: bool, method: ColorMethod) -> Self {
+    pub fn new(color: ColorHex, brightness: f64, anti_alias: bool, method: ColorMethod) -> Self {
         Self {
-            color,
             brightness,
             anti_alias,
             method,
+            gradient: ColorGradient::new(
+                &hex_to_color(color.hex_start),
+                &hex_to_color(color.hex_end),
+            ),
         }
     }
 
@@ -73,15 +82,27 @@ impl ColorCreator {
         norm.powf(pow)
     }
 
+    fn stripes(&self, item: &ComplexItem) -> f64 {
+        let in_fractal = item.index == item.max_index;
+        let point_out_of_bounds = item.index == 0.0;
+        if in_fractal || point_out_of_bounds {
+            return 0.0;
+            // TODO: this could be parametrized
+        }
+        let aa = item.anti_alias();
+        (-aa).powf(3.0)
+    }
+
     pub fn get_pixel(&self, item: &ComplexItem) -> Rgb {
         use ColorMethod::*;
         let base = match self.method {
             Raw => self.raw(item),
             Linear => self.linear(item),
             Exponential { power } => self.exponential(item, power),
+            Stripes => self.stripes(item),
         };
 
         let luma = base * self.brightness;
-        blend_with_color(luma, &self.color)
+        self.gradient.color_for(luma)
     }
 }

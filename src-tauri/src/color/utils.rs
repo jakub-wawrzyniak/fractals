@@ -4,7 +4,7 @@ pub fn clip(input: f64) -> u8 {
     input.round().max(0.0).min(255.0) as u8
 }
 
-pub fn normalize(pixel: u8) -> f64 {
+pub fn _normalize(pixel: u8) -> f64 {
     pixel as f64 / 256.0
 }
 
@@ -32,7 +32,7 @@ pub fn _ease_in_fractal(index: f64, max_iterations: f64) -> f64 {
     output * max_iterations
 }
 
-pub fn blend_channel_overlay(bottom: f64, top: f64) -> u8 {
+pub fn _blend_channel_overlay(bottom: f64, top: f64) -> u8 {
     let blended = if bottom < 0.5 {
         2.0 * bottom * top
     } else {
@@ -41,11 +41,11 @@ pub fn blend_channel_overlay(bottom: f64, top: f64) -> u8 {
     clip(blended * 256.0)
 }
 
-pub fn blend_with_color(luma: f64, color: &Rgb) -> Rgb {
+pub fn _blend_with_color(luma: f64, color: &Rgb) -> Rgb {
     Rgb::from([
-        blend_channel_overlay(luma, normalize(color[0])),
-        blend_channel_overlay(luma, normalize(color[1])),
-        blend_channel_overlay(luma, normalize(color[2])),
+        _blend_channel_overlay(luma, _normalize(color[0])),
+        _blend_channel_overlay(luma, _normalize(color[1])),
+        _blend_channel_overlay(luma, _normalize(color[2])),
     ])
 }
 
@@ -54,8 +54,8 @@ pub fn _create_color_lut(color: Rgb) -> _ColorLUT {
     let black = image::Rgb::<u8>([0, 0, 0]);
     let mut lut = [black; 256];
     for luma in 0..=255 {
-        let normal = normalize(luma);
-        lut[luma as usize] = blend_with_color(normal, &color);
+        let normal = _normalize(luma);
+        lut[luma as usize] = _blend_with_color(normal, &color);
     }
     lut
 }

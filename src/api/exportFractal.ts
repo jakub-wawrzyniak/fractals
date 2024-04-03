@@ -1,8 +1,8 @@
 import { dialog, invoke } from "@tauri-apps/api";
+import { fractalApp } from "../Fractal/fractalApp";
 import { store } from "../store";
 import { ExportFractalRequest } from "./types";
-import { getFractalConfig } from "./utils";
-import { fractalApp } from "../Fractal/fractalApp";
+import { getColorConfig, getFractalConfig } from "./utils";
 
 const state = store.exportConfig;
 
@@ -61,7 +61,8 @@ export const onExportRequest = async () => {
   }
 
   const request: ExportFractalRequest = {
-    ...getFractalConfig(),
+    fractal: getFractalConfig(),
+    color: getColorConfig(),
     fragment: {
       height_px: state.getHeight(),
       width_px: state.get.width,

@@ -3,7 +3,7 @@ import { HasChild } from "../shared";
 import { store } from "../store";
 
 const Equasion = (props: HasChild) => {
-  return <p class="font-mono text-center text-lg">{props.children}</p>;
+  return <p class="font-mono text-lg">{props.children}</p>;
 };
 
 export const FractalEquation = () => {

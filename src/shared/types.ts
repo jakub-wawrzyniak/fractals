@@ -7,6 +7,7 @@ export type Complex = {
   re: number;
 };
 
+export type OnClick = { onClick: () => void };
 export type HasClass = { class?: string };
 export type HasChild = {
   children: JSXElement;

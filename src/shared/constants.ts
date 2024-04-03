@@ -12,7 +12,15 @@ export const INIT_VIEWER_SIZE: Size = {
   width: 800,
   height: 600,
 };
+export const COLORING_METHODS = [
+  "Raw",
+  "Linear",
+  "Exponential",
+  "Stripes",
+] as const;
+export const INIT_COLORING_METHOD = COLORING_METHODS[1];
 
+export type ColoringMethod = (typeof COLORING_METHODS)[number];
 export type Fractal = (typeof FRACTALS)[number];
 type FractalConfig = {
   name: string;
@@ -25,7 +33,7 @@ type FractalConfig = {
 const noOffset: Complex = { re: 0, im: 0 };
 export const FRACTAL_CONFIG = {
   Mandelbrot: {
-    name: "Mandelbrot's Set",
+    name: "Mandelbrot Set",
     equation: "Zn+1 = Zn^2 + C",
     offsetGraphInComplex: { re: -0.7, im: 0 },
     initConstant: null,
@@ -46,7 +54,7 @@ export const FRACTAL_CONFIG = {
     initConstant: null,
   },
   Newton: {
-    name: "Newton's fractal",
+    name: "Newton fractal",
     equation: "Zn+1 = (2 * Zn^3 + 1) / 3Zn^2",
     offsetGraphInComplex: noOffset,
     initConstant: null,
