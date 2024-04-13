@@ -5,7 +5,7 @@ use crate::{
 };
 use image::ImageBuffer as __ImageBuffer;
 use num::complex::Complex64;
-use std::{mem::size_of, num::NonZeroUsize, thread};
+use std::{num::NonZeroUsize, thread};
 
 pub type ImageBuffer = __ImageBuffer<Rgb, Vec<u8>>;
 
@@ -36,7 +36,7 @@ impl FractalImage {
         let step = self.pixel_size();
         let size = &self.fragment;
         ImageBuffer::from_par_fn(size.width_px, size.height_px, |x, y| {
-            let imag = size.bottom_right.im + step * y as f64;
+            let imag = size.top_left.im - step * y as f64;
             let real = size.top_left.re + step * x as f64;
             let point = Complex64::new(real, imag);
             let divergence = self.fractal.eval(point);
@@ -58,22 +58,7 @@ impl FractalImage {
     }
 }
 
-pub fn take_and_flip(buffer: ImageBuffer) -> Vec<u8> {
-    let width = buffer.width() as usize;
-    buffer
-        .into_raw()
-        .chunks(width * size_of::<Rgb>())
-        .rev()
-        .flatten()
-        .copied()
-        .collect()
-}
-
-pub fn into_data_url(raw: ImageBuffer) -> String {
-    let (width, height) = (raw.width(), raw.height());
-    let flipped = take_and_flip(raw);
-    let img = ImageBuffer::from_vec(width, height, flipped).unwrap();
-
+pub fn into_data_url(img: ImageBuffer) -> String {
     use base64::prelude::*;
     use std::io::Cursor;
     let mut buffer = Vec::with_capacity(img.len());
@@ -166,31 +151,21 @@ mod tests {
     }
 
     #[divan::bench]
-    fn flip_and_encode(bencher: divan::Bencher) {
+    fn encode_png(bencher: divan::Bencher) {
         let img = mandelbrot().render();
         bencher.bench(|| {
-            let copy = img.clone();
-            let data = into_data_url(copy);
+            let data = into_data_url(img.clone());
             serde_json::to_string(&data).unwrap();
         })
     }
 
     #[test]
     fn renders_buffer_with_expected_size() {
+        use std::mem::size_of;
         let rendered = mandelbrot().render();
         let (width, height) = rendered.dimensions();
-        let full_size = width * height * super::size_of::<super::Rgb>() as u32;
+        let full_size = width * height * size_of::<super::Rgb>() as u32;
         assert_eq!(full_size as usize, rendered.into_raw().len());
-    }
-
-    #[test]
-    fn size_is_same_after_flipping() {
-        let rendered = mandelbrot().render();
-        let (width, height) = rendered.dimensions();
-        let expected_size = width * height * super::size_of::<super::Rgb>() as u32;
-
-        let got_size = super::take_and_flip(rendered).len() as u32;
-        assert_eq!(expected_size, got_size);
     }
 
     #[test]
