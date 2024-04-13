@@ -5,7 +5,7 @@ use crate::{
 };
 use image::ImageBuffer as __ImageBuffer;
 use num::complex::Complex64;
-use std::{mem::size_of, num::NonZeroUsize, thread, vec};
+use std::{mem::size_of, num::NonZeroUsize, thread};
 
 pub type ImageBuffer = __ImageBuffer<Rgb, Vec<u8>>;
 
@@ -35,101 +35,26 @@ impl FractalImage {
     pub fn render(&self) -> ImageBuffer {
         let step = self.pixel_size();
         let size = &self.fragment;
-        let mut image = ImageBuffer::new(size.width_px, size.height_px);
-        let mut real = size.top_left.re;
-        for x in 0..size.width_px {
-            let mut imag = size.bottom_right.im;
-            for y in 0..size.height_px {
-                let point = Complex64::new(real, imag);
-                let divergence = self.fractal.eval(point);
-                let pixel = self.color.get_pixel(&divergence);
-                image.put_pixel(x, y, pixel);
-                imag += step;
-            }
-            real += step;
-        }
-        image
+        ImageBuffer::from_par_fn(size.width_px, size.height_px, |x, y| {
+            let imag = size.bottom_right.im + step * y as f64;
+            let real = size.top_left.re + step * x as f64;
+            let point = Complex64::new(real, imag);
+            let divergence = self.fractal.eval(point);
+            self.color.get_pixel(&divergence)
+        })
     }
 
-    fn split_work(&self, chunks: u32) -> Vec<Self> {
-        if chunks == 1 {
-            return vec![FractalImage { ..self.clone() }];
-        }
-
-        let step = self.pixel_size();
-        let size = self.fragment.clone();
-        let mut jobs = vec![];
-
-        let chunk_height = size.height_px / chunks;
-        let chunk_bottom_im = |chunk_id: u32| {
-            let id = chunk_id as f64;
-            let height = chunk_height as f64;
-            id * height * step + size.bottom_right.im
-        };
-
-        for id in 0..=(chunks - 2) {
-            jobs.push(FractalImage {
-                fragment: FractalFragment {
-                    width_px: size.width_px,
-                    height_px: chunk_height,
-                    top_left: Complex64::new(size.top_left.re, chunk_bottom_im(id + 1)),
-                    bottom_right: Complex64::new(size.bottom_right.re, chunk_bottom_im(id)),
-                },
-                ..self.clone()
-            });
-        }
-
-        jobs.push(FractalImage {
-            fragment: FractalFragment {
-                height_px: chunk_height + size.height_px % chunks,
-                bottom_right: Complex64::new(size.bottom_right.re, chunk_bottom_im(chunks - 1)),
-                ..size
-            },
-            ..self.clone()
-        });
-
-        let computed_height_px: u32 = jobs.iter().map(|j| j.fragment.height_px).sum();
-        if computed_height_px != size.height_px {
-            panic!("Slow down, cowboy");
-        }
-        jobs
-    }
-
-    fn delegate_and_run(&self, chunks: u32) -> ImageBuffer {
-        let jobs = self.split_work(chunks);
-        let mut handles = vec![];
-        let mut pixels = vec![];
-
-        for job in jobs {
-            handles.push(thread::spawn(move || job.render().into_raw()))
-        }
-
-        for handle in handles {
-            pixels.append(&mut handle.join().unwrap())
-        }
-
-        let size = &self.fragment;
-        ImageBuffer::from_raw(size.width_px, size.height_px, pixels).unwrap()
-    }
-
-    pub fn render_on_threads(self) -> ImageBuffer {
-        let chunks = thread::available_parallelism()
+    pub fn init_threadpool() {
+        let all_threads = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::MIN)
-            .get()
-            * 4;
-        self.delegate_and_run(chunks as u32)
-        // Some chunks are mutch faster to compute than others, if we
-        // make more threads than CPU cores, the load will average out
-    }
-
-    pub fn render_for_ui(self) -> ImageBuffer {
-        let chunks = thread::available_parallelism()
-            .unwrap_or(NonZeroUsize::MIN)
-            .get()
-            - 1; // Spare one thread for UI (app stutters otherwise)
-        self.delegate_and_run(chunks.max(1) as u32)
-        // TODO: Since regular splitting will be suboptimal here,
-        // maybe implement a smarter algorithm to divide the work?
+            .get();
+        let will_use_threads = (0.7 * all_threads as f64).floor().max(1.0) as usize;
+        // When all available threads are used, the app stutters visibly.
+        // I intend to spare some computational power for the UI and WebGL.
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(will_use_threads)
+            .build_global()
+            .expect("Error during thread pool init");
     }
 }
 
@@ -240,11 +165,6 @@ mod tests {
         newton().render();
     }
 
-    #[divan::bench(sample_count = 20, threads = 1)]
-    fn rendered_mandelbrot_threaded() {
-        mandelbrot().render_on_threads();
-    }
-
     #[divan::bench]
     fn flip_and_encode(bencher: divan::Bencher) {
         let img = mandelbrot().render();
@@ -295,13 +215,5 @@ mod tests {
     #[test]
     fn render_julia_saves() {
         julia_set().render().save("./color.png").unwrap();
-    }
-
-    #[test]
-    fn render_threaded_saves() {
-        burning_ship()
-            .render_on_threads()
-            .save("./threads.png")
-            .unwrap();
     }
 }

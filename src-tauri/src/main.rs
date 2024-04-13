@@ -13,7 +13,7 @@ use renderer::{into_data_url, FractalImage};
 #[tauri::command]
 async fn calc_tile(request: TileRequest) -> String {
     let fractal: FractalImage = request.into();
-    let image = fractal.render_for_ui();
+    let image = fractal.render();
     into_data_url(image)
 }
 
@@ -24,7 +24,7 @@ async fn export_image(request: ExportRequest) -> ExportResult {
         return ExportResult::ErrorBadFileType;
     }
     let fractal: FractalImage = request.into();
-    match fractal.render_on_threads().save(path) {
+    match fractal.render().save(path) {
         Err(_) => ExportResult::ErrorUnknown,
         Ok(_) => ExportResult::Done,
     }
@@ -43,6 +43,7 @@ fn get_default_save_dir() -> Option<String> {
 }
 
 fn main() {
+    FractalImage::init_threadpool();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             calc_tile,

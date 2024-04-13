@@ -829,6 +829,7 @@ dependencies = [
  "hex",
  "image",
  "num",
+ "rayon",
  "serde",
  "serde_json",
  "tauri",
@@ -1383,6 +1384,7 @@ dependencies = [
  "num-traits",
  "png",
  "qoi",
+ "rayon",
  "tiff",
 ]
 
@@ -2307,9 +2309,9 @@ checksum = "f2ff9a1f06a88b01621b7ae906ef0211290d1c8a168a15542486a8f61c0833b9"
 
 [[package]]
 name = "rayon"
-version = "1.8.1"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7237101a77a10773db45d62004a272517633fbcc3df19d96455ede1122e051"
+checksum = "b418a60154510ca1a002a752ca9714984e21e4241e804d32555251faf8b78ffa"
 dependencies = [
  "either",
  "rayon-core",
