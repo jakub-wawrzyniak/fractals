@@ -44,42 +44,51 @@ impl FractalImage {
         (y * self.fragment.width_px + x) as usize
     }
 
-    pub fn render(&mut self) {
-        let step = self.pixel_size();
-        let size = &self.fragment;
-        self.state = RenderState::Done(
-            (0..size.height_px)
-                .into_par_iter()
-                .map(|y| {
-                    let mut row = Vec::with_capacity(size.width_px as usize);
-                    for x in 0..size.width_px {
-                        let imag = size.top_left.im - step * y.to_owned() as f64;
-                        let real = size.top_left.re + step * x.to_owned() as f64;
-                        let point = Complex64::new(real, imag);
-                        row.push(self.fractal.eval(point));
-                    }
-                    row
-                })
-                .flatten()
-                .collect(),
-        );
-    }
-
-    pub fn apply_color(&self, color: &ColorCreator) -> ImageBuffer {
+    fn apply_color(&self, color: &ColorCreator, rendered_pixels: &[ComplexItem]) -> ImageBuffer {
         let FractalFragment {
             height_px,
             width_px,
             ..
         } = &self.fragment;
-        let rendered = match &self.state {
-            RenderState::Done(data) => data,
-            RenderState::Todo => panic!("Cannot apply color if the fractal is not rendered"),
-        };
 
         ImageBuffer::from_fn(*width_px, *height_px, |x, y| {
-            let item = &rendered[self.pixel_index(x, y)];
+            let item = &rendered_pixels[self.pixel_index(x, y)];
             color.get_pixel(item, self.fractal.max_item_id())
         })
+    }
+
+    fn eval_fractal(&self) -> Vec<ComplexItem> {
+        let step = self.pixel_size();
+        let size = &self.fragment;
+        (0..size.height_px)
+            .into_par_iter()
+            .map(|y| {
+                let mut row = Vec::with_capacity(size.width_px as usize);
+                for x in 0..size.width_px {
+                    let imag = size.top_left.im - step * y.to_owned() as f64;
+                    let real = size.top_left.re + step * x.to_owned() as f64;
+                    let point = Complex64::new(real, imag);
+                    row.push(self.fractal.eval(point));
+                }
+                row
+            })
+            .flatten()
+            .collect()
+    }
+
+    pub fn render(&mut self, color: &ColorCreator) -> ImageBuffer {
+        let rendered_pixels = match &self.state {
+            RenderState::Done(data) => data,
+            RenderState::Todo => {
+                let data = self.eval_fractal();
+                self.state = RenderState::Done(data);
+                match &self.state {
+                    RenderState::Done(data) => data,
+                    RenderState::Todo => panic!("I just assigned this variable, wtf?!"),
+                }
+            }
+        };
+        self.apply_color(color, rendered_pixels)
     }
 
     pub fn init_threadpool() {
@@ -158,8 +167,7 @@ mod tests {
     }
 
     fn render(mut img: FractalImage) -> ImageBuffer {
-        img.render();
-        img.apply_color(&get_color())
+        img.render(&get_color())
     }
 
     #[divan::bench(sample_count = 30)]
@@ -217,12 +225,12 @@ mod tests {
     #[test]
     fn render_mandelbrot_saves() {
         let img = render(mandelbrot());
-        img.save("./gray.png").unwrap();
+        img.save("./mandelbrot.png").unwrap();
     }
 
     #[test]
     fn render_julia_saves() {
         let img = render(mandelbrot());
-        img.save("./color.png").unwrap();
+        img.save("./julia.png").unwrap();
     }
 }

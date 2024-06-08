@@ -15,8 +15,7 @@ use renderer::{into_data_url, FractalImage};
 async fn calc_tile(request: TileRequest) -> String {
     let color: ColorCreator = request.color.clone().into();
     let mut fractal: FractalImage = request.into();
-    fractal.render();
-    let image = fractal.apply_color(&color);
+    let image = fractal.render(&color);
     into_data_url(image)
 }
 
@@ -29,9 +28,7 @@ async fn export_image(request: ExportRequest) -> ExportResult {
 
     let color: ColorCreator = request.color.clone().into();
     let mut fractal: FractalImage = request.into();
-    fractal.render();
-    let image = fractal.apply_color(&color);
-    match image.save(path) {
+    match fractal.render(&color).save(path) {
         Err(_) => ExportResult::ErrorUnknown,
         Ok(_) => ExportResult::Done,
     }
