@@ -22,12 +22,12 @@ impl From<FractalConfig> for Fractal {
 
 impl From<TileRequest> for FractalImage {
     fn from(value: TileRequest) -> Self {
-        FractalImage::new(value.fractal.into(), value.fragment, value.color.into())
+        FractalImage::new(value.fractal.into(), value.fragment)
     }
 }
 
 impl From<ExportRequest> for FractalImage {
     fn from(value: ExportRequest) -> Self {
-        FractalImage::new(value.fractal.into(), value.fragment, value.color.into())
+        FractalImage::new(value.fractal.into(), value.fragment)
     }
 }

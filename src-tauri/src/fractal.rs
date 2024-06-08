@@ -1,12 +1,18 @@
 use crate::data::FractalVariant;
 use num::complex::Complex64;
 
+#[derive(Clone)]
+pub enum ItemState {
+    Escaped,
+    DidntEscapeYet, // Given current iteration count, the item didn't escape. But it could, if the iteration was higher.
+    WillNeverEscape, // Used when a cycle is detected. Regardless of the no of iterations, such item will never escape the given radius
+}
+
+#[derive(Clone)]
 pub struct ComplexItem {
-    pub index: f64,
-    pub max_index: f64,
-    // Those^ values will eventually be converted to f64,
-    // so for simplicity let's do it once, in Fractal::eval
+    pub index: u32,
     pub value: Complex64,
+    pub bounds: ItemState,
 }
 
 #[derive(Clone)]
@@ -70,8 +76,11 @@ impl Fractal {
             period += 1;
 
             if current_item == old_item {
-                item_id = self.max_item_id;
-                break;
+                return ComplexItem {
+                    value: current_item,
+                    index: self.max_item_id,
+                    bounds: ItemState::WillNeverEscape,
+                };
             }
 
             if period >= 20 {
@@ -81,8 +90,16 @@ impl Fractal {
         }
         ComplexItem {
             value: current_item,
-            index: item_id as f64,
-            max_index: self.max_item_id as f64,
+            index: item_id,
+            bounds: if item_id < self.max_item_id {
+                ItemState::Escaped
+            } else {
+                ItemState::DidntEscapeYet
+            },
         }
+    }
+
+    pub fn max_item_id(&self) -> u32 {
+        self.max_item_id
     }
 }

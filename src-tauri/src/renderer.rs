@@ -1,27 +1,35 @@
 use crate::{
     color::ColorCreator,
     data::{FractalFragment, Rgb},
-    fractal::Fractal,
+    fractal::{ComplexItem, Fractal},
 };
 use image::ImageBuffer as __ImageBuffer;
 use num::complex::Complex64;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::{num::NonZeroUsize, thread};
 
 pub type ImageBuffer = __ImageBuffer<Rgb, Vec<u8>>;
 
 #[derive(Clone)]
+enum RenderState {
+    Todo,
+    Done(Vec<ComplexItem>),
+    // Dirty(Vec<u8>)
+}
+
+#[derive(Clone)]
 pub struct FractalImage {
     fractal: Fractal,
     fragment: FractalFragment,
-    color: ColorCreator,
+    state: RenderState,
 }
 
 impl FractalImage {
-    pub fn new(fractal: Fractal, fragment: FractalFragment, color: ColorCreator) -> Self {
+    pub fn new(fractal: Fractal, fragment: FractalFragment) -> Self {
         Self {
             fractal,
             fragment,
-            color,
+            state: RenderState::Todo,
         }
     }
 
@@ -32,15 +40,45 @@ impl FractalImage {
         (real_max - real_min) / width
     }
 
-    pub fn render(&self) -> ImageBuffer {
+    fn pixel_index(&self, x: u32, y: u32) -> usize {
+        (y * self.fragment.width_px + x) as usize
+    }
+
+    pub fn render(&mut self) {
         let step = self.pixel_size();
         let size = &self.fragment;
-        ImageBuffer::from_par_fn(size.width_px, size.height_px, |x, y| {
-            let imag = size.top_left.im - step * y as f64;
-            let real = size.top_left.re + step * x as f64;
-            let point = Complex64::new(real, imag);
-            let divergence = self.fractal.eval(point);
-            self.color.get_pixel(&divergence)
+        self.state = RenderState::Done(
+            (0..size.height_px)
+                .into_par_iter()
+                .map(|y| {
+                    let mut row = Vec::with_capacity(size.width_px as usize);
+                    for x in 0..size.width_px {
+                        let imag = size.top_left.im - step * y.to_owned() as f64;
+                        let real = size.top_left.re + step * x.to_owned() as f64;
+                        let point = Complex64::new(real, imag);
+                        row.push(self.fractal.eval(point));
+                    }
+                    row
+                })
+                .flatten()
+                .collect(),
+        );
+    }
+
+    pub fn apply_color(&self, color: &ColorCreator) -> ImageBuffer {
+        let FractalFragment {
+            height_px,
+            width_px,
+            ..
+        } = &self.fragment;
+        let rendered = match &self.state {
+            RenderState::Done(data) => data,
+            RenderState::Todo => panic!("Cannot apply color if the fractal is not rendered"),
+        };
+
+        ImageBuffer::from_fn(*width_px, *height_px, |x, y| {
+            let item = &rendered[self.pixel_index(x, y)];
+            color.get_pixel(item, self.fractal.max_item_id())
         })
     }
 
@@ -96,63 +134,57 @@ mod tests {
     }
 
     fn mandelbrot() -> FractalImage {
-        FractalImage {
-            color: get_color(),
-            fragment: FRAGMENT,
-            fractal: Fractal::new(1024, Mandelbrot),
-        }
+        FractalImage::new(Fractal::new(1024, Mandelbrot), FRAGMENT)
     }
+
     fn julia_set() -> FractalImage {
-        FractalImage {
-            color: get_color(),
-            fragment: FRAGMENT,
-            fractal: Fractal::new(
+        FractalImage::new(
+            Fractal::new(
                 1024,
                 JuliaSet {
                     constant: Complex64::new(0.34, 0.08),
                 },
             ),
-        }
+            FRAGMENT,
+        )
     }
+
     fn burning_ship() -> FractalImage {
-        FractalImage {
-            fragment: FRAGMENT,
-            color: get_color(),
-            fractal: Fractal::new(1024, BurningShip),
-        }
+        FractalImage::new(Fractal::new(1024, BurningShip), FRAGMENT)
     }
 
     fn newton() -> FractalImage {
-        FractalImage {
-            fragment: FRAGMENT,
-            color: get_color(),
-            fractal: Fractal::new(1024, Newton),
-        }
+        FractalImage::new(Fractal::new(1024, Newton), FRAGMENT)
+    }
+
+    fn render(mut img: FractalImage) -> ImageBuffer {
+        img.render();
+        img.apply_color(&get_color())
     }
 
     #[divan::bench(sample_count = 30)]
     fn rendered_mandelbrot() {
-        mandelbrot().render();
+        render(mandelbrot());
     }
 
     #[divan::bench(sample_count = 30)]
     fn rendered_julia_set() {
-        julia_set().render();
+        render(julia_set());
     }
 
     #[divan::bench(sample_count = 30)]
     fn rendered_burning_ship() {
-        burning_ship().render();
+        render(burning_ship());
     }
 
     #[divan::bench(sample_count = 30)]
     fn rendered_newton() {
-        newton().render();
+        render(newton());
     }
 
     #[divan::bench]
     fn encode_png(bencher: divan::Bencher) {
-        let img = mandelbrot().render();
+        let img = render(mandelbrot());
         bencher.bench(|| {
             let data = into_data_url(img.clone());
             serde_json::to_string(&data).unwrap();
@@ -162,7 +194,7 @@ mod tests {
     #[test]
     fn renders_buffer_with_expected_size() {
         use std::mem::size_of;
-        let rendered = mandelbrot().render();
+        let rendered = render(mandelbrot());
         let (width, height) = rendered.dimensions();
         let full_size = width * height * size_of::<super::Rgb>() as u32;
         assert_eq!(full_size as usize, rendered.into_raw().len());
@@ -173,7 +205,7 @@ mod tests {
         use base64::prelude::*;
         use std::io::Cursor;
 
-        let img = mandelbrot().render();
+        let img = render(mandelbrot());
         let mut buffer = Vec::with_capacity(img.len());
         let mut cursor = Cursor::new(&mut buffer);
         img.write_to(&mut cursor, image::ImageOutputFormat::Jpeg(70))
@@ -184,11 +216,13 @@ mod tests {
 
     #[test]
     fn render_mandelbrot_saves() {
-        mandelbrot().render().save("./gray.png").unwrap();
+        let img = render(mandelbrot());
+        img.save("./gray.png").unwrap();
     }
 
     #[test]
     fn render_julia_saves() {
-        julia_set().render().save("./color.png").unwrap();
+        let img = render(mandelbrot());
+        img.save("./color.png").unwrap();
     }
 }

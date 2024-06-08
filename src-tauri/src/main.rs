@@ -7,13 +7,16 @@ mod data;
 mod fractal;
 mod renderer;
 
+use color::ColorCreator;
 use data::{ExportRequest, ExportResult, TileRequest};
 use renderer::{into_data_url, FractalImage};
 
 #[tauri::command]
 async fn calc_tile(request: TileRequest) -> String {
-    let fractal: FractalImage = request.into();
-    let image = fractal.render();
+    let color: ColorCreator = request.color.clone().into();
+    let mut fractal: FractalImage = request.into();
+    fractal.render();
+    let image = fractal.apply_color(&color);
     into_data_url(image)
 }
 
@@ -23,8 +26,12 @@ async fn export_image(request: ExportRequest) -> ExportResult {
     if image::ImageFormat::from_path(&path).is_err() {
         return ExportResult::ErrorBadFileType;
     }
-    let fractal: FractalImage = request.into();
-    match fractal.render().save(path) {
+
+    let color: ColorCreator = request.color.clone().into();
+    let mut fractal: FractalImage = request.into();
+    fractal.render();
+    let image = fractal.apply_color(&color);
+    match image.save(path) {
         Err(_) => ExportResult::ErrorUnknown,
         Ok(_) => ExportResult::Done,
     }
