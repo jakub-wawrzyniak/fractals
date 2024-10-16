@@ -61,9 +61,16 @@ pub struct FractalConfig {
 }
 
 #[derive(Deserialize, Clone)]
+pub struct TilePosition {
+    level: i32,
+    x: i32,
+    y: i32,
+}
+
+#[derive(Deserialize, Clone)]
 pub struct TileRequest {
     pub fractal: FractalConfig,
-    pub fragment: FractalFragment,
+    pub position: TilePosition,
     pub color: ColorConfig,
 }
 
